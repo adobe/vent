@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/lazd/vent.git"
   },
-  "author": "Larry Davis <lawdavis@adobe.com>",
+  "author": "Larry Davis <lazdnet@adobe.com>",
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/lazd/vent/issues"

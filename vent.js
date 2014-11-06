@@ -76,6 +76,7 @@
       Execute all listeners that should happen in the capture phase
 
       @private
+      @memberof Vent
     */
     this._executeCapturePhaseListeners = function(event) {
       // Tell _executeListeners to deal with capture phase events only
@@ -86,6 +87,7 @@
       Execute all listeners that should happen in the bubble phase
 
       @private
+      @memberof Vent
     */
     this._executeBubblePhaseListeners = function(event) {
       // Tell _executeListeners to deal with bubble phase events only
@@ -97,6 +99,7 @@
     Handles all events added with Vent
 
     @private
+    @memberof Vent
   */
   Vent.prototype._executeListeners = function(event, captureOnly) {
     var listeners = this._eventsByType[event.type];
@@ -136,18 +139,19 @@
           // Check if the event is the in right phase
           && (listener.useCapture === captureOnly)
         ) {
+          // Call handlers in the right scope, passing the event
           listener.handler.call(event.target, event);
         }
       }
     }
-    // Call handlers in the right scope, passing the event
   };
 
   /**
     Add an event listener.
+    @memberof Vent
 
     @param {String} eventName
-      The event name to listen for, including an option namespace.
+      The event name to listen for, including optional namespace(s).
     @param {String} [selector]
       The selector to use for event delegation.
     @param {Function} handler
@@ -212,12 +216,13 @@
 
   /**
     Remove an event listener.
+    @memberof Vent
 
-    @param {String} eventName
+    @param {String} [eventName]
       The event name to stop listening for, including optional namespace(s).
     @param {String} [selector]
       The selector that was used for event delegation.
-    @param {Function} handler
+    @param {Function} [handler]
       The function that was passed to <code>on()</code>.
     @param {Boolean} [useCapture]
       Only remove listeners with <code>useCapture</code> set to the value passed in.
@@ -321,23 +326,25 @@
     return this;
   };
 
-  /**
-    Trigger an event
-
-    @param {String} eventName
-      The name of the event to trigger.
-    @param {Object} [options]
-      CustomEvent options.
-    @param {Object} [options.bubbles=true]
-      Whether the event should bubble.
-    @param {Object} [options.cancelable=true]
-      Whether the event should be cancelable.
-    @param {Object} [options.detail]
-      Data to pass to handlers as <code>event.detail</code>
-  */
   if (typeof CustomEvent === 'function') {
     // Use native CustomEvent on platforms that support it
     // Note: defaultPrevented will not be set correctly if CustomEvent is polyfilled
+
+    /**
+      Trigger an event
+      @memberof Vent
+
+      @param {String} eventName
+        The name of the event to trigger.
+      @param {Object} [options]
+        CustomEvent options.
+      @param {Object} [options.bubbles=true]
+        Whether the event should bubble.
+      @param {Object} [options.cancelable=true]
+        Whether the event should be cancelable.
+      @param {Object} [options.detail]
+        Data to pass to handlers as <code>event.detail</code>
+    */
     Vent.prototype.trigger = function(eventName, options) {
       options = options || {};
 
@@ -397,6 +404,9 @@
     };
   }
 
+  /**
+    Destroy this instance, removing all events and references.
+  */
   Vent.prototype.destroy = function() {
     // Remove all events
     this.off();
