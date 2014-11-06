@@ -1,6 +1,4 @@
 (function(global) {
-  var DEBUG = 0;
-
   // The event is in the capturing phase.
   var CAPTURING_PHASE = 1;
 
@@ -123,15 +121,6 @@
       for (var i = 0; i < listeners.length; i++) {
         listener = listeners[i];
 
-        if (DEBUG > 1) {
-          console.log(
-            '\ncaptureOnly: '+ (captureOnly) +
-            '\ntarget !== this.el? '+ (target !== this.el) +
-            '\nlistener.selector: '+ (listener.selector) +
-            '\nmatches? '+ matchesSelector.call(target, listener.selector)
-          );
-        }
-
         if (
           // Check if the target elements matches the selector
           (
@@ -175,8 +164,12 @@
       selector = null;
     }
 
-    // Be null if not provided
-    if (typeof selector === 'undefined') {
+    if (typeof handler !== 'function') {
+      throw new Error('Vent: Cannot add listener with non-function handler');
+    }
+
+    // Be null if every falsy (undefined or empty string passed)
+    if (!selector) {
       selector = null;
     }
 
@@ -276,19 +269,6 @@
     for (var i = 0; i < this._allEvents.length; i++) {
       event = this._allEvents[i];
 
-      if (DEBUG > 1) {
-        console.log(
-          '\neventName: '+eventName +
-          '\nselector: '+selector +
-          '\nnamespaces: ['+((namespaces && namespaces.join(',')) || '')+']' +
-          '\nuseCapture: '+useCapture +
-          '\n\nevent.selector: '+event.selector +
-          '\nevent.namespaces: ['+((event.namespaces && event.namespaces.join(',')) || '')+']' +
-          '\nevent.useCapture: '+event.useCapture +
-          '\n\nintersects? '+ ((namespaces && event.namespaces && intersects(namespaces, event.namespaces)) || false)
-        );
-      }
-
       if (
         (eventName === null || event.eventName === eventName) &&
         (selector === null || event.selector === selector) &&
@@ -301,9 +281,6 @@
           (event.namespaces && intersects(namespaces, event.namespaces))
         )
       ) {
-        if (DEBUG > 1) {
-          console.log('Removing event');
-        }
         // Remove the event info
         this._allEvents.splice(i, 1);
 
@@ -360,9 +337,17 @@
   */
   if (typeof CustomEvent === 'function') {
     // Use native CustomEvent on platforms that support it
-    // Note, defaultPrevented will not be set correctly if CustomEvent is polyfilled
+    // Note: defaultPrevented will not be set correctly if CustomEvent is polyfilled
     Vent.prototype.trigger = function(eventName, options) {
-      options = options || { bubbles: true, cancelable: true };
+      options = options || {};
+
+      if (typeof options.bubbles === 'undefined') {
+        options.bubbles = true;
+      }
+
+      if (typeof options.cancelable === 'undefined') {
+        options.cancelable = true;
+      }
 
       var event = new CustomEvent(eventName, options);
       this.el.dispatchEvent(event);
@@ -372,11 +357,19 @@
   }
   else {
     // Use createEvent for old browsers
-    Vent.prototype.trigger = function() {
-      options = options || { bubbles: true, cancelable: true };
+    Vent.prototype.trigger = function(eventName, options) {
+      options = options || {};
+
+      if (typeof options.bubbles === 'undefined') {
+        options.bubbles = true;
+      }
+
+      if (typeof options.cancelable === 'undefined') {
+        options.cancelable = true;
+      }
 
       var event = document.createEvent('CustomEvent');
-      event.initCustomEvent(inType, options.bubbles, options.cancelable, options.detail);
+      event.initCustomEvent(eventName, options.bubbles, options.cancelable, options.detail);
 
       var defaultPrevented = !this.el.dispatchEvent(event);
 

@@ -56,6 +56,20 @@ describe('Vent', function() {
     expect(vent.el).to.equal(target);
   });
 
+  it('should throw if on() called with a non-function handler', function() {
+    expect(function() {
+      vent('customEvent');
+    }).to.throw();
+
+    expect(function() {
+      vent('customEvent', null);
+    }).to.throw();
+
+    expect(function() {
+      vent('customEvent', 'string');
+    }).to.throw();
+  });
+
   describe('event removal', function() {
     it('should fire other listeners when event of the same type is removed', function() {
       var spy_1 = sinon.spy();
@@ -408,6 +422,24 @@ describe('Vent', function() {
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
     });
 
+    it('should add direct event when passed empty string for selector', function() {
+      var spy = sinon.spy();
+
+      vent.on('customEvent', '', spy);
+
+      trigger('customEvent', target);
+
+      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+
+      vent.off('customEvent', spy);
+
+      spy.reset();
+
+      trigger('customEvent', target);
+
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+    });
+
     it('should add, handle, and remove events directly on the window', function() {
       var vent = new Vent(window);
 
@@ -488,9 +520,6 @@ describe('Vent', function() {
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
     });
 
-  });
-
-  describe('state changes', function() {
     it('should call all listeners when first listener removed during event callback', function() {
       var spy_1 = sinon.spy();
       var spy_2 = sinon.spy();
@@ -546,6 +575,55 @@ describe('Vent', function() {
       expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event on target element');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event on target element');
       expect(spy_3.callCount).to.equal(1, 'spy_3 call count after triggering event on target element');
+    });
+  });
+
+  describe('trigger', function() {
+    it('should trigger events', function() {
+      var spy = sinon.spy();
+      vent.on('customEvent', spy);
+      vent.trigger('customEvent');
+      expect(spy.callCount).to.equal(1, 'spy call count after event triggered');
+    });
+
+    it('should set options.bubbles = true by default', function() {
+      var spy_window = sinon.spy();
+      window.addEventListener('customEvent', spy_window);
+
+      vent.trigger('customEvent');
+      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event triggered');
+
+      vent.trigger('customEvent', { cancelable: false });
+      expect(spy_window.callCount).to.equal(2, 'spy_window call count after event triggered again');
+    });
+
+    it('should support options.bubbles = false', function() {
+      var spy_window = sinon.spy();
+      var spy_direct = sinon.spy();
+
+      window.addEventListener('customEvent', spy_window);
+      target.addEventListener('customEvent', spy_direct);
+
+      vent.trigger('customEvent', {
+        bubbles: false
+      });
+
+      expect(spy_window.callCount).to.equal(0, 'spy_window call count after event triggered');
+      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after event triggered');
+    });
+
+    it('should correctly set event.defaultPrevented if event.preventDefault() called', function() {
+      var spy_window = sinon.spy();
+
+      window.addEventListener('customEvent', function(event) {
+        event.preventDefault();
+        spy_window();
+      });
+
+      var event = vent.trigger('customEvent');
+
+      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event triggered');
+      expect(event.defaultPrevented).to.equal(true, 'event.defaultPrevented after event triggered');
     });
   });
 
