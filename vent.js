@@ -74,11 +74,10 @@
     this._allEvents = [];
 
     var self = this;
-
     /**
       Execute all listeners that should happen in the capture phase
 
-      @ignore
+      @private
     */
     this._executeCapturePhaseListeners = function(event) {
       // Tell _executeListeners to deal with capture phase events only
@@ -88,68 +87,72 @@
     /**
       Execute all listeners that should happen in the bubble phase
 
-      @ignore
+      @private
     */
     this._executeBubblePhaseListeners = function(event) {
       // Tell _executeListeners to deal with bubble phase events only
       self._executeListeners(event, false);
     };
+  }
 
-    /**
-      Handles all events added with Vent
+  /**
+    Handles all events added with Vent
 
-      @ignore
-    */
-    this._executeListeners = function(event, captureOnly) {
-      var phase = event.eventPhase;
+    @private
+  */
+  Vent.prototype._executeListeners = function(event, captureOnly) {
+    var listeners = this._eventsByType[event.type];
 
-      // Get a copy of the listeners
-      // Without this, removing an event inside of a callback will cause errors
-      var listeners = self._eventsByType[event.type].slice();
+    if (!listeners) {
+      throw new Error('Vent: _executeListeners called in response to event we are not listening to');
+    }
 
-      var target = event.target;
-      // If the event was triggered on a text node, delegation should assume the target is its parent
-      if (target.nodeType === Node.TEXT_NODE) {
-        target = target.parentNode;
-      }
+    // Get a copy of the listeners
+    // Without this, removing an event inside of a callback will cause errors
+    listeners = listeners.slice();
 
-      if (listeners) {
-        // Check for events matching the event name
-        var listener;
-        for (var i = 0; i < listeners.length; i++) {
-          listener = listeners[i];
+    var target = event.target;
+    // If the event was triggered on a text node, delegation should assume the target is its parent
+    if (target.nodeType === Node.TEXT_NODE) {
+      target = target.parentNode;
+    }
 
-          if (DEBUG > 1) {
-            console.log(
-              '\nphase: '+ (phase) +
-              '\ntarget !== self.el? '+ (target !== self.el) +
-              '\nlistener.selector: '+ (listener.selector) +
-              '\nmatches? '+ matchesSelector.call(target, listener.selector)
-            );
-          }
+    if (listeners) {
+      // Check for events matching the event name
+      var listener;
+      for (var i = 0; i < listeners.length; i++) {
+        listener = listeners[i];
 
-          if (
-            // Check if the target elements matches the selector
+        if (DEBUG > 1) {
+          console.log(
+            '\ncaptureOnly: '+ (captureOnly) +
+            '\ntarget !== this.el? '+ (target !== this.el) +
+            '\nlistener.selector: '+ (listener.selector) +
+            '\nmatches? '+ matchesSelector.call(target, listener.selector)
+          );
+        }
+
+        if (
+          // Check if the target elements matches the selector
+          (
+            // Always trigger if no selector provided
+            listener.selector === null ||
             (
-              // Always trigger if no selector provided
-              listener.selector === null ||
-              (
-                // Only trigger if the event isn't triggered directly on the element
-                target !== self.el &&
-                // And if the selector matches
-                matchesSelector.call(target, listener.selector)
-              )
+              // Only trigger if the event isn't triggered directly on the element
+              target !== this.el &&
+              // And if the selector matches
+              matchesSelector.call(target, listener.selector)
             )
-            // Check if the event is the in right phase
-            && (listener.useCapture === captureOnly)
-          ) {
-            listener.handler.call(event.target, event);
-          }
+          )
+          // Check if the event is the in right phase
+          && (listener.useCapture === captureOnly)
+        ) {
+          listener.handler.call(event.target, event);
         }
       }
-      // Call handlers in the right scope, passing the event
-    };
-  }
+    }
+    // Call handlers in the right scope, passing the event
+  };
 
   /**
     Add an event listener.
