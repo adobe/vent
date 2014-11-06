@@ -76,11 +76,31 @@
     var self = this;
 
     /**
+      Execute all listeners that should happen in the capture phase
+
+      @ignore
+    */
+    this._executeCapturePhaseListeners = function(event) {
+      // Tell _executeListeners to deal with capture phase events only
+      self._executeListeners(event, true);
+    };
+
+    /**
+      Execute all listeners that should happen in the bubble phase
+
+      @ignore
+    */
+    this._executeBubblePhaseListeners = function(event) {
+      // Tell _executeListeners to deal with bubble phase events only
+      self._executeListeners(event, false);
+    };
+
+    /**
       Handles all events added with Vent
 
       @ignore
     */
-    this._handleEvent = function(event) {
+    this._executeListeners = function(event, captureOnly) {
       var phase = event.eventPhase;
 
       // Get a copy of the listeners
@@ -101,7 +121,7 @@
 
           if (DEBUG > 1) {
             console.log(
-              '\nlistener.selector: '+ (listener.selector) +
+              '\nphase: '+ (phase) +
               '\ntarget !== self.el? '+ (target !== self.el) +
               '\nlistener.selector: '+ (listener.selector) +
               '\nmatches? '+ matchesSelector.call(target, listener.selector)
@@ -120,8 +140,8 @@
                 matchesSelector.call(target, listener.selector)
               )
             )
-            // Todo: Check capture phase
-            // && (listener.useCapture ? phase === CAPTURING_PHASE : true)
+            // Check if the event is the in right phase
+            && (listener.useCapture === captureOnly)
           ) {
             listener.handler.call(event.target, event);
           }
@@ -157,8 +177,10 @@
       selector = null;
     }
 
+    // false by default
+    // This matches the HTML API
     if (typeof useCapture === 'undefined') {
-      useCapture = null;
+      useCapture = false;
     }
 
     // Extract namespaces
@@ -169,12 +191,13 @@
       eventName = eventName.slice(0, dotIndex);
     }
 
-    // Add master listener
     if (!this._eventsByType[eventName]) {
+      // Create the list for the event type
       this._eventsByType[eventName] = [];
 
-      // @todo: set useCapture correctly
-      this.el.addEventListener(eventName, this._handleEvent);
+      // Add master listeners
+      this.el.addEventListener(eventName, this._executeCapturePhaseListeners, true);
+      this.el.addEventListener(eventName, this._executeBubblePhaseListeners, false);
     }
 
     // Create an object with the events information
@@ -302,8 +325,10 @@
           // Remove actual listener if none are left
           if (mapList.length === 0) {
             // Remove the listener
-            this.el.removeEventListener(event.eventName, this._handleEvent);
+            this.el.removeEventListener(event.eventName, this._executeCapturePhaseListeners, true);
+            this.el.removeEventListener(event.eventName, this._executeBubblePhaseListeners, false);
 
+            // Avoid using delete operator for performance
             this._eventsByType[event.eventName] = null;
           }
         }

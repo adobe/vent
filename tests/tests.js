@@ -272,10 +272,120 @@ describe('Vent', function() {
       expect(spy_2.callCount).to.equal(2, 'spy_2 call count after off(event_main, .content, spy_1)');
     });
 
-    it.skip('should remove all events of a specific type, on a specific selector, with a specific handler, with a specific useCapture when off(type, selector, handler, capture) is called', function() {
+    it('should remove all events of a specific type, on a specific selector, with a specific handler, with useCapture = true when off(type, selector, handler, capture) is called', function() {
+      var spy_bubble = sinon.spy();
+      var spy_capture = sinon.spy();
+      var spy_other = sinon.spy();
+      var spy_noSelector = sinon.spy();
 
+      target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
+      var content = target.querySelector('.content');
+
+      vent.on('event_main', '.content', spy_capture, true);
+      vent.on('event_main', '.content', spy_bubble, false);
+      vent.on('event_main', '.content', spy_other);
+      vent.on('event_main', spy_noSelector);
+
+      trigger('event_main', content);
+
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after triggering event');
+      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after triggering event');
+      expect(spy_bubble.callCount).to.equal(1, 'spy call count after triggering event');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after triggering event');
+
+      vent.off('event_main', '.content', spy_capture, true);
+
+      spy_noSelector.reset();
+      spy_capture.reset();
+      spy_bubble.reset();
+      spy_other.reset();
+
+      trigger('event_main', content);
+
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after off(event_main, .content, spy_capture, true)');
+      expect(spy_capture.callCount).to.equal(0, 'spy_capture call count after off(event_main, .content, spy_capture, true)');
+      expect(spy_bubble.callCount).to.equal(1, 'spy_bubble call count after off(event_main, .content, spy_capture, true)');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after off(event_main, .content, spy_capture, true)');
     });
 
+    it('should remove all events of a specific type, on a specific selector, with a specific handler, with useCapture = false when off(type, selector, handler, capture) is called', function() {
+      var spy_bubble = sinon.spy();
+      var spy_capture = sinon.spy();
+      var spy_other = sinon.spy();
+      var spy_noSelector = sinon.spy();
+
+      target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
+      var content = target.querySelector('.content');
+
+      vent.on('event_main', '.content', spy_capture, true);
+      vent.on('event_main', '.content', spy_bubble, false);
+      vent.on('event_main', '.content', spy_other);
+      vent.on('event_main', spy_noSelector);
+
+      trigger('event_main', content);
+
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after triggering event');
+      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after triggering event');
+      expect(spy_bubble.callCount).to.equal(1, 'spy call count after triggering event');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after triggering event');
+
+      vent.off('event_main', '.content', spy_bubble, false);
+
+      spy_noSelector.reset();
+      spy_capture.reset();
+      spy_bubble.reset();
+      spy_other.reset();
+
+      trigger('event_main', content);
+
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after off(event_main, .content, spy_capture, false)');
+      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after off(event_main, .content, spy_capture, false)');
+      expect(spy_bubble.callCount).to.equal(0, 'spy_bubble call count after off(event_main, .content, spy_capture, false)');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after off(event_main, .content, spy_capture, false)');
+    });
+
+  });
+
+  describe('useCapture', function() {
+    it('should fire useCapture listeners during the capture phase', function() {
+      var vent = new Vent(document);
+      var bubbleSpy = sinon.spy();
+      var captureSpy = sinon.spy();
+      var bubblePhase;
+      var capturePhase;
+
+      target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
+      var content = target.querySelector('.content');
+
+      vent.on('customEvent', '.content', function(event) {
+        bubblePhase = event.eventPhase;
+        bubbleSpy();
+      }, false);
+
+      vent.on('customEvent', '.content', function(event) {
+        capturePhase = event.eventPhase;
+        captureSpy();
+      }, true);
+
+      trigger('customEvent', content);
+
+      expect(capturePhase).to.equal(1, 'Phase for capture listener');
+      expect(bubblePhase).to.equal(3, 'Phase for bubble listener');
+      expect(captureSpy.calledBefore(bubbleSpy)).to.equal(true, 'captureSpy called before bubbleSpy');
+
+      expect(captureSpy.callCount).to.equal(1, 'captureSpy call count after event triggered');
+      expect(bubbleSpy.callCount).to.equal(1, 'bubbleSpy call count after event triggered');
+
+      vent.off();
+
+      trigger('customEvent', content);
+
+      captureSpy.reset();
+      bubbleSpy.reset();
+
+      expect(captureSpy.callCount).to.equal(0, 'captureSpy call count after off()');
+      expect(bubbleSpy.callCount).to.equal(0, 'bubbleSpy call count after off()');
+    });
   });
 
   describe('direct events', function() {
