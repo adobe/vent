@@ -10,6 +10,11 @@
   // The event is in the bubbling phase.
   var BUBBLING_PHASE = 3;
 
+  /**
+    Check if there is a common element in two arrays
+
+    @ignore
+  */
   function intersects(left, right) {
     for (var i = 0; i < left.length; i++) {
       if (right.indexOf(left[i]) !== -1) {
@@ -21,6 +26,8 @@
 
   /**
     Get the right method to match selectors on
+
+    @ignore
   */
   var matchesSelector = (function() {
     var proto = Element.prototype;
@@ -67,10 +74,24 @@
     this._allEvents = [];
 
     var self = this;
+
+    /**
+      Handles all events added with Vent
+
+      @ignore
+    */
     this._handleEvent = function(event) {
-      var listeners = self._eventsByType[event.type];
-      var target = event.target;
       var phase = event.eventPhase;
+
+      // Get a copy of the listeners
+      // Without this, removing an event inside of a callback will cause errors
+      var listeners = self._eventsByType[event.type].slice();
+
+      var target = event.target;
+      // If the event was triggered on a text node, delegation should assume the target is its parent
+      if (target.nodeType === Node.TEXT_NODE) {
+        target = target.parentNode;
+      }
 
       if (listeners) {
         // Check for events matching the event name
@@ -151,7 +172,9 @@
     // Add master listener
     if (!this._eventsByType[eventName]) {
       this._eventsByType[eventName] = [];
-      this.el.addEventListener(eventName, this._handleEvent, useCapture);
+
+      // @todo: set useCapture correctly
+      this.el.addEventListener(eventName, this._handleEvent);
     }
 
     // Create an object with the events information
@@ -190,6 +213,10 @@
     }
 
     // Be null if not provided
+    if (typeof eventName === 'undefined') {
+      eventName = null;
+    }
+
     if (typeof selector === 'undefined') {
       selector = null;
     }
@@ -204,13 +231,15 @@
 
     // Extract namespaces
     var namespaces = null;
-    var dotIndex = eventName.indexOf('.');
-    if (dotIndex !== -1) {
-      namespaces = eventName.slice(dotIndex+1).split('.');
-      eventName = eventName.slice(0, dotIndex);
+    if (eventName) {
+      var dotIndex = eventName.indexOf('.');
+      if (dotIndex !== -1) {
+        namespaces = eventName.slice(dotIndex+1).split('.');
+        eventName = eventName.slice(0, dotIndex);
+      }
     }
 
-    // Be snull
+    // Be null
     if (eventName === '') {
       eventName = null;
     }
@@ -223,8 +252,9 @@
 
       if (DEBUG > 1) {
         console.log(
+          '\neventName: '+eventName +
           '\nselector: '+selector +
-          '\nnamespaces: ['+namespaces.join(',')+']' +
+          '\nnamespaces: ['+((namespaces && namespaces.join(',')) || '')+']' +
           '\nuseCapture: '+useCapture +
           '\n\nevent.selector: '+event.selector +
           '\nevent.namespaces: ['+((event.namespaces && event.namespaces.join(',')) || '')+']' +
@@ -245,23 +275,37 @@
           (event.namespaces && intersects(namespaces, event.namespaces))
         )
       ) {
+        if (DEBUG > 1) {
+          console.log('Removing event');
+        }
         // Remove the event info
         this._allEvents.splice(i, 1);
 
         // Array length changed, so check the same index on the next iteration
         i--;
 
-        // Remove the listener
-        this.el.removeEventListener(event.eventName, event.handler, event.useCapture);
-
         // Don't stop now! We want to remove all matching events
 
         // Get index in eventsByType map
+        if (!this._eventsByType[event.eventName]) {
+          throw new Error('Vent: Missing eventsByType for '+event.eventName);
+        }
+
         index = this._eventsByType[event.eventName].indexOf(event);
 
         if (index !== -1) {
+          var mapList = this._eventsByType[event.eventName];
+
           // Remove from the map
-          this._eventsByType[event.eventName].splice(index, 1);
+          mapList.splice(index, 1);
+
+          // Remove actual listener if none are left
+          if (mapList.length === 0) {
+            // Remove the listener
+            this.el.removeEventListener(event.eventName, this._handleEvent);
+
+            this._eventsByType[event.eventName] = null;
+          }
         }
         else {
           throw new Error('Vent: Event existed in allEvents, but did not exist in eventsByType');
@@ -333,6 +377,10 @@
   }
 
   Vent.prototype.destroy = function() {
+    // Remove all events
+    this.off();
+
+    // Remove all references
     this._eventsByType = null;
     this._allEvents = null;
     this.el = null;
