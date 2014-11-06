@@ -1,5 +1,7 @@
 module.exports = function(config) {
-  config.set({
+  var reportCoverage = process.env.REPORT_COVERAGE;
+
+  var karmaConfig = {
     // base path, that will be used to resolve files and exclude
     basePath: './',
 
@@ -34,6 +36,18 @@ module.exports = function(config) {
     // CLI --auto-watch --no-auto-watch
     autoWatch: true,
 
+    // If browser does not capture in given timeout [ms], kill it
+    // CLI --capture-timeout 5000
+    captureTimeout: 20000,
+
+    // Auto run tests on start (when browsers are captured) and exit
+    // CLI --single-run --no-single-run
+    singleRun: true,
+
+    // report which specs are slower than 500ms
+    // CLI --report-slower-than 500
+    reportSlowerThan: 500,
+
     // Start these browsers
     // CLI --browsers Chrome,Firefox,Safari
     browsers: process.env.TRAVIS ? [ 'Firefox' ] : [
@@ -45,26 +59,20 @@ module.exports = function(config) {
       // Source files you want to generate coverage reports for
       // This should not include tests or libraries
       // These files will be instrumented by Istanbu
-      'vent.js': ['coverage'],
       'tests/snippets/*.html': ['html2js']
-    },
+    }
+  };
+
+  if (reportCoverage) {
+    // Add coverage reporting
+    karmaConfig.preprocessors['vent.js'] = ['coverage'];
 
     // Configure the reporter
-    coverageReporter: {
+    karmaConfig.coverageReporter = {
       type: 'html',
       dir: 'build/coverage/'
-    },
+    };
+  }
 
-    // If browser does not capture in given timeout [ms], kill it
-    // CLI --capture-timeout 5000
-    captureTimeout: 20000,
-
-    // Auto run tests on start (when browsers are captured) and exit
-    // CLI --single-run --no-single-run
-    singleRun: true,
-
-    // report which specs are slower than 500ms
-    // CLI --report-slower-than 500
-    reportSlowerThan: 500
-  });
+  config.set(karmaConfig);
 };
