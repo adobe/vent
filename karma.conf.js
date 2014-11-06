@@ -1,4 +1,5 @@
 module.exports = function(config) {
+  // Disable coverage by default until karma-runner/karma-coverage/issues/96 is fixed
   var reportCoverage = process.env.REPORT_COVERAGE;
 
   var karmaConfig = {
@@ -70,7 +71,7 @@ module.exports = function(config) {
     // Configure the reporter
     karmaConfig.coverageReporter = {
       type: 'html',
-      dir: 'build/coverage/'
+      dir: 'coverage/'
     };
   }
 
