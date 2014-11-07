@@ -237,7 +237,7 @@
       this.el.setAttribute('__vent-id__', this._id);
     }
 
-    // Create an object with the events information
+    // Create an object with the event's information
     var eventObject = {
       eventName: eventName,
       handler: handler,
@@ -444,6 +444,7 @@
 
   /**
     Destroy this instance, removing all events and references.
+    @memberof Vent
   */
   Vent.prototype.destroy = function() {
     // Remove all events
