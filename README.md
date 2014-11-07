@@ -1,6 +1,28 @@
 # vent
 > DOM event delegation that actually works
 
+## Why?
+
+There are other event delegation libraries out there, so here's how Vent is different:
+
+* **NS**: Supports event namespaces, i.e. `click.myApp`
+* **Scoped**: Supports scoped selectors, i.e. `> .immediateChild`
+* **Real DOM**: Triggers real, bubbling DOM events
+* **Capture**: Supports listening to events during the capture phase
+* **Tests**: Has comprehensive tests
+
+Name            | NS?                | Scoped?            | Real DOM?         | Capture?          | Tests?
+----------------|:-------------------|:------------------:|:-----------------:|:-----------------:|:-------------------:
+[Vent]          | :white_check_mark: | :white_check_mark: | :white_check_mark:| :white_check_mark:| :white_check_mark:
+[jQuery]        | :white_check_mark: | :white_check_mark: | :x:               | :x:               | :white_check_mark:
+[Gator]         | :x:                | :x:                | :white_check_mark:| :x:               | :x:
+[ftdomdelegate] | :x:                | :x:                | :white_check_mark:| :white_check_mark:| :white_check_mark:
+
+[Vent]: #vent
+[jQuery]: https://github.com/jquery/jquery
+[Gator]: https://github.com/ccampbell/gator
+[ftdomdelegate]: https://github.com/ftlabs/ftdomdelegate
+
 ## API
 
 ### Vent(elementOrSelector) -> vent
