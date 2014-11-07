@@ -37,12 +37,12 @@ Add an event listener.
 
 ##### Parameters
 
-Name         | Type     | Optional | Default  | Description
+Name         | Type     | Required | Default  | Description
 -------------|----------|----------| ---------|------------
-`eventName`  | String   | no       | -        | The event name to listen for, including optional namespace(s).
-`selector`   | String   | **yes**  | -        | The selector to use for event delegation.
-`handler`    | Function | no       | -        | The function that will be called when the event is triggered.
-`useCapture` | Boolean  | **yes**  | false    | Only remove listeners with useCapture set to the value passed in.
+`eventName`  | String   | **yes**  | -        | The event name to listen for, including optional namespace(s).
+`selector`   | String   | no       | -        | The selector to use for event delegation.
+`handler`    | Function | **yes**  | -        | The function that will be called when the event is triggered.
+`useCapture` | Boolean  | no       | false    | Only remove listeners with useCapture set to the value passed in.
 
 
 #### vent.off(eventName[, selector], handler[, useCapture]) → this
@@ -51,12 +51,12 @@ Remove an event listener.
 
 ##### Parameters
 
-Name         | Type     | Optional | Description
+Name         | Type     | Required | Description
 -------------|----------|----------|------------
-`eventName`  | String   | **yes**  | Only remove listeners for the provided event name and/or namespace(s).
-`selector`   | String   | **yes**  | Only remove listeners that have this selector.
-`handler`    | Function | **yes**  | Only remove listeners that have this handler.
-`useCapture` | Boolean  | **yes**  | Only remove listeners that are captured.
+`eventName`  | String   | no       | Only remove listeners for the provided event name and/or namespace(s).
+`selector`   | String   | no       | Only remove listeners that have this selector.
+`handler`    | Function | no       | Only remove listeners that have this handler.
+`useCapture` | Boolean  | no       | Only remove listeners that are captured.
 
 
 #### vent.trigger(eventName[, options]) → CustomEvent
@@ -65,12 +65,13 @@ Trigger a custom event.
 
 ##### Parameters
 
-Name                  | Type     | Optional | Default  | Description
+Name                  | Type     | Required | Default  | Description
 ----------------------|----------|----------| ---------|------------
-`eventName`           | String   | no       | -        | The name of the event to trigger.
-`options.bubbles`     | Boolean  | **yes**  | true     | Whether the event should bubble.
-`options.cancelable`  | Boolean  | **yes**  | true     | Whether the event should be cancelable.
-`options.detail`      | *        | **yes**  | -        | Data to pass to listeners as `event.detail`
+`eventName`           | String   | **yes**  | -        | The name of the event to trigger.
+`options`             | Object   | no       | -        | CustomEvent options.
+`options.bubbles`     | Boolean  | no       | true     | Whether the event should bubble.
+`options.cancelable`  | Boolean  | no       | true     | Whether the event should be cancelable.
+`options.detail`      | *        | no       | -        | Data to pass to listeners as `event.detail`.
 
 
 ## Examples
@@ -295,91 +296,7 @@ Vent may work correctly on other browsers that support these technologies.
 
 ## Contributing
 
-### 1. File an issue
-
-An issue must exist before you start working on a fix or a feature.
-
-First, [search the issues](https://github.com/lazd/vent/issues) to see if one has already been filed for what you're about to work on.
-
-If not, [file an issue](https://github.com/lazd/vent/issues/new) with the following information.
-
-For bugs:
-
-* The problem
-* A simple code sample that reproduces the issue
-* What browsers you have and have not observed the issue on
-* Any workarounds you have found
-
-For features:
-
-* The feature
-* Why
-* Code samples showing the proposed API
-* Notes on any impact you forsee the feature having
-
-### 2. Fork the repo
-
-[Fork Vent](https://github.com/lazd/vent/fork) to your Github account and clone it to your local machine.
-
-Be sure to add an upstream remote:
-
-```
-git remote add upstream git@github.com:lazd/vent.git
-```
-
-### 3. Create a branch
-
-Create a branch from the lastest master named `issue/#`, where # is the issue number you're going to work on:
-
-```
-git checkout master
-git pull upstream master
-git checkout -b issue/10
-```
-
-### 4. Write some code
-
-Install dependencies and start developing:
-
-```
-npm install
-npm run watch
-```
-
-Tests will run each time you save a file.
-
-### 5. Make some commits
-
-Your commit message should contain the issue number it closes or fixes:
-
-For bugs:
-
-```
-Copy the array of listeners before executing them, fixes #1
-```
-
-For features:
-
-```
-Support root-relative delegation, closes #2
-```
-
-### 6. Do the atomic squash
-
-Include one commit for each relevant portion involved in your contribution.
-
-If you've created many very small commits, such as "Fix typo,"" please squash them to reduce history pollution.
-
-### 7. Push and send a pull request
-
-Push your branch to your fork:
-
-```
-git push -u origin issue/10
-```
-
-Then, [send a pull request](https://github.com/lazd/vent/compare) against the `master` branch of lazd/vent.
-
+Pull requests are welcome! Please see the [contribution guidelines](CONTRIBUTING.md) before you get started.
 
 ## License
 
