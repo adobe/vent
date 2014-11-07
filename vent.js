@@ -1,13 +1,4 @@
 (function(global) {
-  // The event is in the capturing phase.
-  var CAPTURING_PHASE = 1;
-
-  // The event is being evaluated at the target element.
-  var AT_TARGET = 2;
-
-  // The event is in the bubbling phase.
-  var BUBBLING_PHASE = 3;
-
   /**
     Check if there is a common element in two arrays
 
