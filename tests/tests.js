@@ -818,28 +818,63 @@ describe('Vent', function() {
     });
 
     it('should support multiple namespaces for a single listener', function() {
-      var spy_first = sinon.spy();
-      var spy_second = sinon.spy();
+      var spy_ns1 = sinon.spy();
+      var spy_ns2 = sinon.spy();
+      var spy_ns1ns2 = sinon.spy();
+      var spy_ns1ns2ns3 = sinon.spy();
 
-      vent.on('first.ns1.ns2', spy_first);
-      vent.on('second.ns2', spy_second);
+      vent.on('customEvent.ns1', spy_ns1);
+      vent.on('customEvent.ns2', spy_ns2);
+      vent.on('customEvent.ns1.ns2', spy_ns1ns2);
+      vent.on('customEvent.ns1.ns2.ns3', spy_ns1ns2ns3);
 
-      trigger('first', target);
-      trigger('second', target);
+      trigger('customEvent', target);
 
-      expect(spy_first.callCount).to.equal(1, 'first spy call count after triggering event');
-      expect(spy_second.callCount).to.equal(1, 'second spy call count after triggering event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after triggering event');
+      expect(spy_ns2.callCount).to.equal(1, 'spy_ns2 call count after triggering event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 call count after triggering event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after triggering event');
 
       vent.off('.ns2');
 
-      spy_first.reset();
-      spy_second.reset();
+      spy_ns1.reset();
+      spy_ns2.reset();
+      spy_ns1ns2.reset();
+      spy_ns1ns2ns3.reset();
 
-      trigger('first', target);
-      trigger('second', target);
+      trigger('customEvent', target);
 
-      expect(spy_first.callCount).to.equal(0, 'first spy call count after removing listener and triggering event');
-      expect(spy_second.callCount).to.equal(0, 'second spy count after removing listener and triggering event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns2 and triggering event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns2 and triggering event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns2 and triggering event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after triggering event');
+
+      vent.off('.ns1.ns2.ns3');
+
+      spy_ns1.reset();
+      spy_ns2.reset();
+      spy_ns1ns2.reset();
+      spy_ns1ns2ns3.reset();
+
+      trigger('customEvent', target);
+
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after triggering event');
+
+      vent.off('.ns1');
+      trigger('customEvent', target);
+
+      spy_ns1.reset();
+      spy_ns2.reset();
+      spy_ns1ns2.reset();
+      spy_ns1ns2ns3.reset();
+
+      expect(spy_ns1.callCount).to.equal(0, 'spy_ns1 call count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns1ns2.callCount).to.equal(0, 'spy_ns1ns2 count after removing .ns1.ns2 and triggering event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after triggering event');
     });
 
   });

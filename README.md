@@ -202,7 +202,7 @@ vent.off('.signup');
 // This includes listeners that have both .myApp and .signUp
 vent.off('.myApp');
 
-// Remove event listeners that have either the .yourApp or .myApp namespace
+// Remove event listeners that have both the .yourApp and .myApp namespaces
 vent.off('.myApp.yourApp');
 ```
 

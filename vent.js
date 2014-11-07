@@ -13,6 +13,20 @@
     return false;
   }
 
+  /**
+    Check if there if the first array contains every element in the second array
+
+    @ignore
+  */
+  function contains(left, right) {
+    for (var i = 0; i < right.length; i++) {
+      if (right.indexOf(left[i]) === -1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /*
     Matches selectors that are scoped, such as:
       > selector
@@ -318,8 +332,8 @@
         (
           // Remove matching listeners, regardless of namespace
           namespaces === null ||
-          // Listener specifies a matching namespace
-          (listener.namespaces && intersects(namespaces, listener.namespaces))
+          // Listener matches all specified namespaces
+          (listener.namespaces && contains(listener.namespaces, namespaces))
         )
       ) {
         // Remove the listeners info
