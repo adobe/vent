@@ -624,6 +624,7 @@ describe('Vent', function() {
 
       expect(spy_window.callCount).to.equal(1, 'spy_window call count after event triggered');
       expect(event.defaultPrevented).to.equal(true, 'event.defaultPrevented after event triggered');
+      expect(event).to.be.instanceof(Event);
     });
   });
 

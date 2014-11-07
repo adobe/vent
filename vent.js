@@ -416,24 +416,23 @@
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent(eventName, options.bubbles, options.cancelable, options.detail);
 
+      // Dispatch the event, checking the return value to see if preventDefault() was called
       var defaultPrevented = !this.el.dispatchEvent(event);
 
+      // Check if the defaultPrevented status was correctly stored back to the event object
       if (defaultPrevented !== event.defaultPrevented) {
-        // dispatchEvent() doesn't correctly set defaultPrevented in IE 9
-        // However, it does return the correct value when dispatchEvent() called
-        // Furthermore, the returned event's defaultPrevented property is readonly
-        // To work around this, we create a new event object with the correct defaultPrevented
-        // Note: The patched event object will not have the correct prototype and will not be an instance of an event
-        var patchedEvent = {};
-        for (var prop in event) {
-          patchedEvent[prop] = event[prop];
-        }
+        // dispatchEvent() doesn't correctly set event.defaultPrevented in IE 9
+        // However, it does return false if preventDefault() was called
+        // Unfortunately, the returned event's defaultPrevented property is readonly
+        // We need to work around this such that (patchedEvent instanceof Event) === true
+        // First, we'll create an object that uses the event as its prototype
+        // This gives us an object we can modify that is still technically an instanceof Event
+        var patchedEvent = Object.create(event);
 
-        // Store the correct value for defaultPrevented
-        patchedEvent.defaultPrevented = defaultPrevented;
-
-        // Store the original event
-        patchedEvent.originalEvent = event;
+        // Next, we set the correct value for defaultPrevented on the new object
+        // We cannot simply assign defaultPrevented, it causes a "Invalid Calling Object" error in IE 9
+        // For some reason, defineProperty doesn't cause this
+        Object.defineProperty(patchedEvent, 'defaultPrevented', { value: defaultPrevented });
 
         return patchedEvent;
       }
