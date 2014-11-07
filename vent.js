@@ -43,6 +43,39 @@
     return selector && scopedSelectorRegex.test(selector);
   }
 
+  // Vent always listens to events in the capture phase so we can explicitly control behavior
+  // In order for stopPropagation and stopImmediatePropagation to correctly stop handlers from being called, we have to get tricky
+  // If a Vent listener calls stopPropagation, we need to simulate this so that listeners added natively are not called as expected
+  // To achieve this, we'll add an event listener that will call stopPropagation on the real event in the correct phase
+  // The following functions will be used as the handlers and will detach themselves automatically
+
+  function _stopPropagationInBubblePhase(event) {
+    Event.prototype.stopPropagation.call(event);
+    this.removeEventListener(event.type, _stopPropagationInBubblePhase, false);
+  }
+
+  function _stopPropagationInCapturePhase(event) {
+    Event.prototype.stopPropagation.call(event);
+    this.removeEventListener(event.type, _stopPropagationInCapturePhase, true);
+  }
+
+  // An unfortunate caveat that results from attaching a listener during dispatch:
+  // We're definitely going to be the last listener added to the element in almost all cases
+  // As such, we cannot actually stop the immediate propagation to native listeners because they are added before us
+  // Since we've overridden the event's stopImmediatePropagation method, we can be sure that our listener will always be called
+  // If we had not, it would be possible for a native event to stopImmediatePropagation such that our listener stick around,
+  // which would cause unexpected behavior for subsequent events
+
+  function _stopImmediatePropagationInBubblePhase(event) {
+    Event.prototype.stopImmediatePropagation.call(event);
+    this.removeEventListener(event.type, _stopImmediatePropagationInBubblePhase, false);
+  }
+
+  function _stopImmediatePropagationInCapturePhase(event) {
+    Event.prototype.stopImmediatePropagation.call(event);
+    this.removeEventListener(event.type, _stopImmediatePropagationInCapturePhase, true);
+  }
+
   /**
     Get the right method to match selectors on
 
@@ -71,7 +104,7 @@
 
   /**
     @class Vent
-    @classdesc Event delegation that works.
+    @classdesc DOM event delegation
   */
   function Vent(elOrSelector) {
     if (this === global) {
@@ -97,27 +130,73 @@
     this._allListeners = [];
 
     var self = this;
-    /**
-      Execute all listeners that should happen in the capture phase
 
-      @private
-      @memberof Vent
-    */
-    this._executeCapturePhaseListeners = function(event) {
-      // Tell _executeListeners to deal with capture phase events only
-      self._executeListeners(event, true);
-    };
+    this._executeListeners = this._executeListeners.bind(this);
+  }
 
-    /**
-      Execute all listeners that should happen in the bubble phase
+  /**
+    This function is responsible for checking if listeners should be executed for the current event
 
-      @private
-      @memberof Vent
-    */
-    this._executeBubblePhaseListeners = function(event) {
-      // Tell _executeListeners to deal with bubble phase events only
-      self._executeListeners(event, false);
-    };
+    @ignore
+  */
+  Vent.prototype._executeListenersAtElement = function(target, listeners, event, useCapture) {
+    var root = this.el;
+    var id = this._id;
+
+    var listener;
+    var returnValue;
+
+    // Execute each listener that means the criteria
+    executeListeners: for (var listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++) {
+      listener = listeners[listenerIndex];
+
+      if (
+        // Check if the target elements matches for this listener
+        (
+          (
+            // When no selector is provided
+            listener.selector === null &&
+            (
+              // Execute if we've landed on the root
+              target === root
+            )
+          ) ||
+          (
+            // document does not support matches()
+            target !== document &&
+            // Don't bother with delegation on the root element
+            target !== root &&
+            // Check if the event is delegated
+            listener.selector !== null &&
+            // Only execute  if the selector matches
+            (
+              // Check if the selector has context
+              listener.isScoped ?
+              // Run the match using the root element's ID
+              matchesSelector.call(target, '[__vent-id__="'+id+'"] '+listener.selector)
+              // Run the match without context
+              : matchesSelector.call(target, listener.selector)
+            )
+          )
+        ) &&
+        // Check if the event is the in right phase
+        (listener.useCapture === useCapture)
+      ) {
+        // Call handlers in the scope of the original target, passing the event along
+        returnValue = listener.handler.call(event.target, event);
+
+        // Prevent default and stopPropagation if the handler returned false
+        if (returnValue === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+
+        if (event._ventImmediatePropagationStopped) {
+          // Do not process any more event handlers and stop bubbling
+          break executeListeners;
+        }
+      } // end if
+    } // end executeListeners
   }
 
   /**
@@ -126,56 +205,113 @@
     @private
     @memberof Vent
   */
-  Vent.prototype._executeListeners = function(event, captureOnly) {
+  Vent.prototype._executeListeners = function(event) {
     var listeners = this._listenersByType[event.type];
 
     if (!listeners) {
-      throw new Error('Vent: _executeListeners called in response to event we are not listening to');
+      throw new Error('Vent: _executeListeners called in response to '+event.type+', but we are not listening to it');
     }
 
-    // Get a copy of the listeners
-    // Without this, removing an event inside of a callback will cause errors
-    listeners = listeners.slice();
+    if (listeners.length) {
+      // Get a copy of the listeners
+      // Without this, removing an event inside of a callback will cause errors
+      listeners = listeners.slice();
 
-    var target = event.target;
+      // Store a reference to the target
+      // If the event was fired on a text node, delegation should assume the target is its parent
+      var target = event.target;
+      if (target.nodeType === Node.TEXT_NODE) {
+        target = target.parentNode;
+      }
 
-    // If the event was fired on a text node, delegation should assume the target is its parent
-    if (target.nodeType === Node.TEXT_NODE) {
-      target = target.parentNode;
-    }
+      // Override stopPropagation/stopImmediatePropagation so we know if we should stop processing events
+      event.stopPropagation = function() {
+        event._ventPropagationStopped = true;
+      };
 
-    if (listeners) {
-      // Check for events matching the event name
-      var listener;
-      for (var i = 0; i < listeners.length; i++) {
-        listener = listeners[i];
+      event.stopImmediatePropagation = function() {
+        event._ventImmediatePropagationStopped = true;
+      };
 
+      // Build an array of the DOM tree between the root and the element that dispatched the event
+      // The HTML specification states that, if the tree is modified during dispatch, the event should bubble as it was before
+      // Building this list before we dispatch allows us to simulate that behavior
+      var targetListIndex;
+      var currentTargetElement;
+      var tempTarget = target;
+      var targetList = [];
+      buildTree: while (tempTarget && tempTarget !== this.el) {
+        targetList.push(tempTarget);
+        tempTarget = tempTarget.parentNode;
+      }
+      targetList.push(this.el);
+
+      // Simulate the capture phase by trickling down the target list
+      trickelDown: for (targetListIndex = targetList.length - 1; targetListIndex >= 0; targetListIndex--) {
+        if (!listeners.length) {
+          // Stop trickling down if there are no more listeners to execute
+          break trickelDown;
+        }
+        currentTargetElement = targetList[targetListIndex];
+        this._executeListenersAtElement(currentTargetElement, listeners, event, true);
+
+        // Stop if a handler told us to stop trickling down the DOM
         if (
-          // Check if the target elements matches the selector
-          (
-            // Always execute if no selector provided
-            listener.selector === null ||
-            (
-              // Only execute if the event isn't fired directly on the element
-              target !== this.el &&
-              // And if the selector matches
-              (
-                // Check if the selector has context
-                listener.isScoped ?
-                // Run the match using the root element's ID
-                matchesSelector.call(target, '[__vent-id__="'+this._id+'"] '+listener.selector)
-                // Run the match without context
-                : matchesSelector.call(target, listener.selector)
-              )
-            )
-          ) &&
-          // Check if the event is the in right phase
-          (listener.useCapture === captureOnly)
+          event._ventImmediatePropagationStopped ||
+          event._ventPropagationStopped
         ) {
-          // Call handlers in the right scope, passing the event
-          listener.handler.call(event.target, event);
+          // Stop simulating trickle down
+          break trickelDown;
         }
       }
+
+      // Stop if a handler told us to stop trickling down the DOM
+      if (
+        event._ventImmediatePropagationStopped ||
+        event._ventPropagationStopped
+      ) {
+        // Use the appropriate listener
+        var listener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInCapturePhase : _stopPropagationInCapturePhase;
+
+        // Stop propagation once the actual event reaches the node in question
+        currentTargetElement.addEventListener(event.type, listener, true);
+      }
+      else if (listeners.length) {
+        // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
+        bubbleUp: for (targetListIndex = 0; targetListIndex < targetList.length; targetListIndex++) {
+          if (!listeners.length) {
+          // Stop bubbling up if there are no more listeners to execute
+            break bubbleUp;
+          }
+          currentTargetElement = targetList[targetListIndex];
+          this._executeListenersAtElement(currentTargetElement, listeners, event, false);
+
+          // Stop simulating the buble phase if a handler told us to
+          if (
+            event._ventImmediatePropagationStopped ||
+            event._ventPropagationStopped
+          ) {
+            break bubbleUp;
+          }
+        }
+
+        // Stop if a handler told us to stop bubbling up the DOM
+        if (
+          event._ventImmediatePropagationStopped ||
+          event._ventPropagationStopped
+        ) {
+          // Use the appropriate listener
+          var listener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInBubblePhase : _stopPropagationInBubblePhase;
+
+          // Stop propagation once the actual event reaches the node in question
+          currentTargetElement.addEventListener(event.type, listener, false);
+        }
+      }
+
+      // Restore the previous preventDefault methods
+      // This allows native event listeners to correctly stop propagation once the event is inside of Vent's root
+      event.stopPropagation = Event.prototype.stopPropagation;
+      event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
     }
   };
 
@@ -227,17 +363,8 @@
     // Get/create the list for the event type
     var listenerList = this._listenersByType[eventName] = this._listenersByType[eventName] || [];
 
-    // Check if we need to add actual listeners for the given phase
-    if (useCapture && !listenerList.capturePhaseListenerAdded) {
-      // Add the capture phase listener
-      this.el.addEventListener(eventName, this._executeCapturePhaseListeners, true);
-      listenerList.capturePhaseListenerAdded = true;
-    }
-    else if (!listenerList.bubblePhaseListenerAdded) {
-      // Add the bubble phase listener
-      this.el.addEventListener(eventName, this._executeBubblePhaseListeners, false);
-      listenerList.bubblePhaseListenerAdded = true;
-    }
+    // Add the actual listener
+    this.el.addEventListener(eventName, this._executeListeners, true);
 
     // Set the special ID attribute if the selector is scoped
     var listenerIsScoped = isScoped(selector);
@@ -358,14 +485,8 @@
 
           // Check if we've removed all the listeners for this event type
           if (mapList.length === 0) {
-            // Remove the actual listeners, if necessary
-            if (mapList.bubblePhaseListenerAdded) {
-              this.el.removeEventListener(listener.eventName, this._executeBubblePhaseListeners, false);
-            }
-
-            if (mapList.capturePhaseListenerAdded) {
-              this.el.removeEventListener(listener.eventName, this._executeCapturePhaseListeners, true);
-            }
+            // Remove the actual listener, if necessary
+            this.el.removeEventListener(listener.eventName, this._executeListeners, true);
 
             // Avoid using delete operator for performance
             this._listenersByType[listener.eventName] = null;
