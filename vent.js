@@ -59,7 +59,7 @@
     @class Vent
     @classdesc Event delegation that works.
   */
-  var Vent = function(elOrSelector) {
+  function Vent(elOrSelector) {
     if (this === global) {
       throw new Error('Vent must be invoked with the new keyword');
     }
@@ -146,16 +146,16 @@
               // And if the selector matches
               (
                 // Check if the selector has context
-                listener.isScoped
+                listener.isScoped ?
                 // Run the match using the root element's ID
-                ? matchesSelector.call(target, '[__vent-id__="'+this._id+'"] '+listener.selector)
+                matchesSelector.call(target, '[__vent-id__="'+this._id+'"] '+listener.selector)
                 // Run the match without context
                 : matchesSelector.call(target, listener.selector)
               )
             )
-          )
+          ) &&
           // Check if the event is the in right phase
-          && (listener.useCapture === captureOnly)
+          (listener.useCapture === captureOnly)
         ) {
           // Call handlers in the right scope, passing the event
           listener.handler.call(event.target, event);
@@ -225,7 +225,7 @@
     }
 
     // Set the special ID attribute if the selector is scoped
-    var listenerIsScoped = isScoped(selector)
+    var listenerIsScoped = isScoped(selector);
     if (listenerIsScoped) {
       // Normalize selectors so they don't use :scope
       selector = selector.replace(scopedSelectorRegex, '>');
