@@ -1,7 +1,22 @@
-# vent
+# Vent
 > DOM event delegation that actually works
 
-## Why?
+## What is event delegation?
+
+*Event delegation* is a pattern that takes advantage of [event propagation](https://github.com/lazd/vent#capture-vs-bubbling) to let you easily handle events originating from specific descendant elements. With event delegation and the power of CSS selectors, you can handle events originating from any number of elements or add event listeners before the elements you want to listen to are even added to the DOM.
+
+Vent implements the event delegation pattern with a simple, powerful, and familiar API.
+
+```js
+var vent = new Vent(document.body);
+
+// Call the handler when any element with the sayHi CSS class is clicked
+vent.on('click', '.sayHi', function handler() {
+  console.log('Hello world!');
+});
+```
+
+## Why Vent?
 
 There are other event delegation libraries out there, so here's how Vent is different:
 
@@ -207,6 +222,20 @@ vent.off('.myApp');
 vent.off('.myApp.yourApp');
 ```
 
+### Listening to an event just once
+
+Using named functions, you can easily remove listeners the first time they're called:
+
+```js
+vent.on('click', '.reset', function handler(event) {
+  // Remove the listener
+  vent.off('click', '.reset', handler);
+  console.log('Should reset!');
+});
+```
+
+The child element does not have to be in the DOM at the time the listener is added.
+
 
 ### Triggering CustomEvents
 
@@ -239,7 +268,9 @@ vent.trigger('launch', {
 
 ### Capture vs Bubbling
 
-During the *capture phase* the event "trickles down" from the `window` to the element that dispatched the event, then, during the *bubble phase*, the event "bubbles up" from the element that dispatched the event to the `window`.
+When an event is dispatched, it goes through two phases of *propagation* where it moves among ancestor elements in the DOM, executing listeners along the way.
+
+During the *capture phase*, the event "trickles down" from the `window` to the element that dispatched the event, then, during the *bubble phase*, the event "bubbles up" from the element that dispatched the event to the `window`.
 
 ```
                   1st     ^

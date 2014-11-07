@@ -1,4 +1,4 @@
-# vent
+# Vent
 > DOM event delegation that actually works
 
 ## Contributing
