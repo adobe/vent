@@ -218,13 +218,19 @@
       eventName = eventName.slice(0, dotIndex);
     }
 
-    if (!this._eventsByType[eventName]) {
-      // Create the list for the event type
-      this._eventsByType[eventName] = [];
+    // Get/create the list for the event type
+    var eventList = this._eventsByType[eventName] = this._eventsByType[eventName] || [];
 
-      // Add master listeners
+    // Check if we need to add actual listeners for the given phase
+    if (useCapture && !eventList.capturePhaseListenerAdded) {
+      // Add the capture phase listener
       this.el.addEventListener(eventName, this._executeCapturePhaseListeners, true);
+      eventList.capturePhaseListenerAdded = true;
+    }
+    else if (!eventList.bubblePhaseListenerAdded) {
+      // Add the bubble phase listener
       this.el.addEventListener(eventName, this._executeBubblePhaseListeners, false);
+      eventList.bubblePhaseListenerAdded = true;
     }
 
     // Set the special ID attribute if the selector is scoped
@@ -249,7 +255,7 @@
     };
 
     // Store relative to the current type and with everyone else
-    this._eventsByType[eventName].push(eventObject);
+    eventList.push(eventObject);
     this._allEvents.push(eventObject);
   };
 
@@ -346,11 +352,16 @@
           // Remove from the map
           mapList.splice(index, 1);
 
-          // Remove actual listener if none are left
+          // Check if we've removed all the listeners for this event type
           if (mapList.length === 0) {
-            // Remove the listener
-            this.el.removeEventListener(event.eventName, this._executeCapturePhaseListeners, true);
-            this.el.removeEventListener(event.eventName, this._executeBubblePhaseListeners, false);
+            // Remove the actual listeners, if necessary
+            if (mapList.bubblePhaseListenerAdded) {
+              this.el.removeEventListener(event.eventName, this._executeBubblePhaseListeners, false);
+            }
+
+            if (mapList.capturePhaseListenerAdded) {
+              this.el.removeEventListener(event.eventName, this._executeCapturePhaseListeners, true);
+            }
 
             // Avoid using delete operator for performance
             this._eventsByType[event.eventName] = null;
