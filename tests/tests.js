@@ -737,9 +737,31 @@ describe('Vent', function() {
       expect(spy_root.callCount).to.equal(0, 'root call count after off(ns) and triggering event on target element');
     });
 
-    it.skip('should add, handle, and remove events with rooted delegation', function() {
-    });
+    function testScopedSelectorPrefix(scopePrefix) {
+      return function() {
+        target.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
+        var outer = target.querySelector('.outer');
 
+        var vent = new Vent(outer);
+        var spy = sinon.spy();
+
+        vent.on('customEvent', scopePrefix+' li', function(event) {
+          expect(event.target.parentNode).to.equal(outer);
+          spy();
+        });
+
+        var lis = outer.querySelectorAll('li');
+
+        for (var i = 0; i < lis.length; i++) {
+          trigger('customEvent', lis[i]);
+        }
+
+        expect(spy.callCount).to.equal(outer.children.length, 'spy call count as compared to lis element length');
+      };
+    }
+
+    it('should support delegation with scoped selectors with >', testScopedSelectorPrefix('>'));
+    it('should support delegation with scoped selectors with >', testScopedSelectorPrefix(':scope >'));
   });
 
   describe('namespaces', function() {

@@ -22,6 +22,22 @@
     return false;
   }
 
+  /*
+    Matches selectors that are scoped, such as:
+      > selector
+      :scope > selector
+  */
+  var scopedSelectorRegex = /^\s*(>|:scope\s*>)/;
+
+  /**
+    Check if the provided selector is scoped (has context)
+
+    @ignore
+  */
+  function isScoped(selector) {
+    return selector && scopedSelectorRegex.test(selector);
+  }
+
   /**
     Get the right method to match selectors on
 
@@ -44,6 +60,9 @@
 
     return matchesSelector;
   }());
+
+  // The next ID we'll use for scoped delegation
+  var lastID = 0;
 
   /**
     @class Vent
@@ -133,7 +152,14 @@
               // Only trigger if the event isn't triggered directly on the element
               target !== this.el &&
               // And if the selector matches
-              matchesSelector.call(target, listener.selector)
+              (
+                // Check if the selector has context
+                listener.isScoped
+                // Run the match using the root element's ID
+                ? matchesSelector.call(target, '[__vent-id__="'+this._id+'"] '+listener.selector)
+                // Run the match without context
+                : matchesSelector.call(target, listener.selector)
+              )
             )
           )
           // Check if the event is the in right phase
@@ -200,13 +226,25 @@
       this.el.addEventListener(eventName, this._executeBubblePhaseListeners, false);
     }
 
+    // Set the special ID attribute if the selector is scoped
+    var listenerIsScoped = isScoped(selector)
+    if (listenerIsScoped) {
+      // Normalize selectors so they don't use :scope
+      selector = selector.replace(scopedSelectorRegex, '>');
+
+      // Store a unique ID and set a special attribute we'll use to scope
+      this._id = this._id || lastID++;
+      this.el.setAttribute('__vent-id__', this._id);
+    }
+
     // Create an object with the events information
     var eventObject = {
       eventName: eventName,
       handler: handler,
       namespaces: namespaces,
       selector: selector,
-      useCapture: useCapture
+      useCapture: useCapture,
+      isScoped: listenerIsScoped
     };
 
     // Store relative to the current type and with everyone else
