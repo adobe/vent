@@ -25,7 +25,7 @@ Name            | NS?                | Scoped?            | Real DOM?        
 
 ## API
 
-### Vent(elementOrSelector) -> vent
+### new Vent(elementOrSelector) -> vent
 
 Create a new Vent instance with the root element as the provided element or selector.
 
@@ -77,17 +77,27 @@ Name                  | Type     | Optional | Default  | Description
 
 ### Create a Vent instance
 
-You can pass any Element:
+You can pass anything that implements the `EventTarget` interface:
 
 ```js
 var vent = new Vent(window);
+var vent = new Vent(document.body);
+var vent = new Vent(document.documentElement);
 ```
 
-Or a selector:
+Including HTML elements:
+
+```js
+var div = document.createElement('div');
+var vent = new Vent(div);
+```
+
+You can also pass a selector:
 
 ```js
 var vent = new Vent('#myApp');
 ```
+
 
 ### Adding direct event listeners
 
@@ -98,6 +108,7 @@ vent.on('resize', function(event) {
   console.log('Window resized!');
 });
 ```
+
 
 ### Adding delegated event listeners
 
@@ -110,6 +121,7 @@ vent.on('click', '.reset', function(event) {
 ```
 
 The child element does not have to be in the DOM at the time the listener is added.
+
 
 ### Removing listeners
 
@@ -137,7 +149,7 @@ Remove all listeners that call the provided handler:
 vent.off(null, null, handler);
 ```
 
-Remove all listeners capture:
+Remove all listeners that listen during the capture phase:
 
 ```js
 vent.off(null, null, null, true);
@@ -194,7 +206,8 @@ vent.off('.myApp');
 vent.off('.myApp.yourApp');
 ```
 
-### CustomEvents
+
+### Triggering CustomEvents
 
 Vent makes it easy to trigger CustomEvents from the root element of the Vent instance. Unlike `jQuery.trigger()`, events triggered with `Vent.trigger()` are *real DOM events* that can be listened to with `Element.addEventListener`, `jQuery.on()`, or `Vent.on()`.
 
