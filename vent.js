@@ -138,7 +138,8 @@
     listeners = listeners.slice();
 
     var target = event.target;
-    // If the event was triggered on a text node, delegation should assume the target is its parent
+
+    // If the event was fired on a text node, delegation should assume the target is its parent
     if (target.nodeType === Node.TEXT_NODE) {
       target = target.parentNode;
     }
@@ -152,10 +153,10 @@
         if (
           // Check if the target elements matches the selector
           (
-            // Always trigger if no selector provided
+            // Always execute if no selector provided
             listener.selector === null ||
             (
-              // Only trigger if the event isn't triggered directly on the element
+              // Only execute if the event isn't fired directly on the element
               target !== this.el &&
               // And if the selector matches
               (
@@ -187,7 +188,7 @@
     @param {String} [selector]
       The selector to use for event delegation.
     @param {Function} handler
-      The function that will be called when the event is triggered.
+      The function that will be called when the event is fired.
     @param {Boolean} [useCapture]
       Whether or not to listen during the capturing or bubbling phase.
 
@@ -385,11 +386,11 @@
     // Note: defaultPrevented will not be set correctly if CustomEvent is polyfilled
 
     /**
-      Trigger an event
+      Dispatch a custom event at the root element.
       @memberof Vent
 
       @param {String} eventName
-        The name of the event to trigger.
+        The name of the event to dispatch.
       @param {Object} [options]
         CustomEvent options.
       @param {Object} [options.bubbles=true]
@@ -399,7 +400,7 @@
       @param {Object} [options.detail]
         Data to pass to handlers as <code>event.detail</code>
     */
-    Vent.prototype.trigger = function(eventName, options) {
+    Vent.prototype.dispatch = function(eventName, options) {
       options = options || {};
 
       if (typeof options.bubbles === 'undefined') {
@@ -418,7 +419,7 @@
   }
   else {
     // Use createEvent for old browsers
-    Vent.prototype.trigger = function(eventName, options) {
+    Vent.prototype.dispatch = function(eventName, options) {
       options = options || {};
 
       if (typeof options.bubbles === 'undefined') {

@@ -3,9 +3,9 @@ describe('Vent', function() {
   var vent;
 
   /**
-    Trigger an event
+    Dispatch an event
   */
-  function trigger(eventName, element, options) {
+  function dispatch(eventName, element, options) {
     options = options || { bubbles: true, cancelable: true };
     element = element || document;
 
@@ -77,16 +77,16 @@ describe('Vent', function() {
       vent.on('event_1', spy_1);
       vent.on('event_1', spy_2);
 
-      trigger('event_1', target);
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event');
+      dispatch('event_1', target);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
 
       vent.off('event_1', spy_1);
 
       spy_1.reset();
       spy_2.reset();
 
-      trigger('event_1', target);
+      dispatch('event_1', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing listener');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after removing listener');
@@ -99,9 +99,9 @@ describe('Vent', function() {
       vent.on('event_1', spy_1);
       vent.on('event_1', spy_2);
 
-      trigger('event_1', target);
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event');
+      dispatch('event_1', target);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
 
       vent.off('event_1', spy_1);
       vent.off('event_1', spy_2);
@@ -109,13 +109,13 @@ describe('Vent', function() {
       spy_1.reset();
       spy_2.reset();
 
-      trigger('event_1', target);
+      dispatch('event_1', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing listener');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing listener');
 
       vent.on('event_1', spy_3)
-      trigger('event_1', target);
+      dispatch('event_1', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing listener');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing listener');
@@ -134,15 +134,15 @@ describe('Vent', function() {
       vent.on('event_1', '.content', spy_1_delegate);
       vent.on('event_2', spy_2);
 
-      trigger('event_1', target);
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event');
+      dispatch('event_1', target);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
 
-      trigger('event_1', content);
-      expect(spy_1_delegate.callCount).to.equal(1, 'spy_1_delegate call count after triggering event on delegate');
-      expect(spy_1.callCount).to.equal(2, 'spy_1 call count after triggering event on delegate');
+      dispatch('event_1', content);
+      expect(spy_1_delegate.callCount).to.equal(1, 'spy_1_delegate call count after dispatching event on delegate');
+      expect(spy_1.callCount).to.equal(2, 'spy_1 call count after dispatching event on delegate');
 
-      trigger('event_2', target);
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event');
+      dispatch('event_2', target);
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
 
       vent.off();
 
@@ -150,17 +150,17 @@ describe('Vent', function() {
       spy_1_delegate.reset();
       spy_2.reset();
 
-      trigger('event_1', target);
-      trigger('event_1', content);
-      trigger('event_2', target);
+      dispatch('event_1', target);
+      dispatch('event_1', content);
+      dispatch('event_2', target);
 
-      trigger('event_1', target);
+      dispatch('event_1', target);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off()');
 
-      trigger('event_1', content);
+      dispatch('event_1', content);
       expect(spy_1_delegate.callCount).to.equal(0, 'spy_1_delegate call count after off()');
 
-      trigger('event_2', target);
+      dispatch('event_2', target);
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after off()');
     });
 
@@ -173,12 +173,12 @@ describe('Vent', function() {
       vent.on('event_main', spy_2);
       vent.on('event_other', spy_other);
 
-      trigger('event_main', target);
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event');
+      dispatch('event_main', target);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
 
-      trigger('event_other', target);
-      expect(spy_other.callCount).to.equal(1, 'spy_other call count after triggering event');
+      dispatch('event_other', target);
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after dispatching event');
 
       vent.off('event_main');
 
@@ -186,12 +186,12 @@ describe('Vent', function() {
       spy_2.reset();
       spy_other.reset();
 
-      trigger('event_main', target);
+      dispatch('event_main', target);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main)');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after off(event_main)');
 
-      trigger('event_other', target);
-      expect(spy_other.callCount).to.equal(1, 'spy_other call count after off(event_main) after triggering event');
+      dispatch('event_other', target);
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after off(event_main) after dispatching event');
     });
 
     it('should remove all events of a specific type on a specific selector when off(type, selector) is called', function() {
@@ -206,10 +206,10 @@ describe('Vent', function() {
       vent.on('event_main', '.content', spy_2);
       vent.on('event_main', spy_direct);
 
-      trigger('event_main', content);
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event');
-      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after triggering event');
+      dispatch('event_main', content);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
+      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after dispatching event');
 
       vent.off('event_main', '.content');
 
@@ -217,10 +217,10 @@ describe('Vent', function() {
       spy_2.reset();
       spy_direct.reset();
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main)');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after off(event_main)');
-      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after off(event_main) after triggering event');
+      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after off(event_main) after dispatching event');
     });
 
     it('should remove all events of a specific type, on a specific selector, with a specific handler when off(type, selector, handler) is called', function() {
@@ -240,10 +240,10 @@ describe('Vent', function() {
       vent.on('event_main', '.content', spy_delegate);
       vent.on('event_main', '.content', spy_delegate);
 
-      trigger('event_main', content);
-      expect(spy_1.callCount).to.equal(2, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(2, 'spy_2 call count after triggering event');
-      expect(spy_delegate.callCount).to.equal(2, 'spy_delegate call count after triggering event');
+      dispatch('event_main', content);
+      expect(spy_1.callCount).to.equal(2, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(2, 'spy_2 call count after dispatching event');
+      expect(spy_delegate.callCount).to.equal(2, 'spy_delegate call count after dispatching event');
 
       vent.off('event_main', '.content', spy_delegate);
 
@@ -251,7 +251,7 @@ describe('Vent', function() {
       spy_2.reset();
       spy_delegate.reset();
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(2, 'spy_1 call count after off(event_main, .content, spy_1)');
       expect(spy_2.callCount).to.equal(2, 'spy_2 call count after off(event_main, .content, spy_1)');
       expect(spy_delegate.callCount).to.equal(0, 'spy_delegate call count after off(event_main, .content, spy_1)');
@@ -272,16 +272,16 @@ describe('Vent', function() {
       vent.on('event_main', '.content', spy_2);
       vent.on('event_main', spy_2);
 
-      trigger('event_main', content);
-      expect(spy_1.callCount).to.equal(4, 'spy_1 call count after triggering event');
-      expect(spy_2.callCount).to.equal(2, 'spy_2 call count after triggering event');
+      dispatch('event_main', content);
+      expect(spy_1.callCount).to.equal(4, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(2, 'spy_2 call count after dispatching event');
 
       vent.off(null, null, spy_1);
 
       spy_1.reset();
       spy_2.reset();
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main, .content, spy_1)');
       expect(spy_2.callCount).to.equal(2, 'spy_2 call count after off(event_main, .content, spy_1)');
     });
@@ -300,12 +300,12 @@ describe('Vent', function() {
       vent.on('event_main', '.content', spy_other);
       vent.on('event_main', spy_noSelector);
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
 
-      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after triggering event');
-      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after triggering event');
-      expect(spy_bubble.callCount).to.equal(1, 'spy call count after triggering event');
-      expect(spy_other.callCount).to.equal(1, 'spy_other call count after triggering event');
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after dispatching event');
+      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after dispatching event');
+      expect(spy_bubble.callCount).to.equal(1, 'spy call count after dispatching event');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after dispatching event');
 
       vent.off('event_main', '.content', spy_capture, true);
 
@@ -314,7 +314,7 @@ describe('Vent', function() {
       spy_bubble.reset();
       spy_other.reset();
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
 
       expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after off(event_main, .content, spy_capture, true)');
       expect(spy_capture.callCount).to.equal(0, 'spy_capture call count after off(event_main, .content, spy_capture, true)');
@@ -336,12 +336,12 @@ describe('Vent', function() {
       vent.on('event_main', '.content', spy_other);
       vent.on('event_main', spy_noSelector);
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
 
-      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after triggering event');
-      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after triggering event');
-      expect(spy_bubble.callCount).to.equal(1, 'spy call count after triggering event');
-      expect(spy_other.callCount).to.equal(1, 'spy_other call count after triggering event');
+      expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after dispatching event');
+      expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after dispatching event');
+      expect(spy_bubble.callCount).to.equal(1, 'spy call count after dispatching event');
+      expect(spy_other.callCount).to.equal(1, 'spy_other call count after dispatching event');
 
       vent.off('event_main', '.content', spy_bubble, false);
 
@@ -350,7 +350,7 @@ describe('Vent', function() {
       spy_bubble.reset();
       spy_other.reset();
 
-      trigger('event_main', content);
+      dispatch('event_main', content);
 
       expect(spy_noSelector.callCount).to.equal(1, 'spy_noSelector call count after off(event_main, .content, spy_capture, false)');
       expect(spy_capture.callCount).to.equal(1, 'spy_capture call count after off(event_main, .content, spy_capture, false)');
@@ -381,18 +381,18 @@ describe('Vent', function() {
         captureSpy();
       }, true);
 
-      trigger('customEvent', content);
+      dispatch('customEvent', content);
 
       expect(capturePhase).to.equal(1, 'Phase for capture listener');
       expect(bubblePhase).to.equal(3, 'Phase for bubble listener');
       expect(captureSpy.calledBefore(bubbleSpy)).to.equal(true, 'captureSpy called before bubbleSpy');
 
-      expect(captureSpy.callCount).to.equal(1, 'captureSpy call count after event triggered');
-      expect(bubbleSpy.callCount).to.equal(1, 'bubbleSpy call count after event triggered');
+      expect(captureSpy.callCount).to.equal(1, 'captureSpy call count after event dispatched');
+      expect(bubbleSpy.callCount).to.equal(1, 'bubbleSpy call count after event dispatched');
 
       vent.off();
 
-      trigger('customEvent', content);
+      dispatch('customEvent', content);
 
       captureSpy.reset();
       bubbleSpy.reset();
@@ -409,17 +409,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', spy);
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should support silly event names', function() {
@@ -427,17 +427,17 @@ describe('Vent', function() {
 
       vent.on('hasOwnProperty', spy);
 
-      trigger('hasOwnProperty', target);
+      dispatch('hasOwnProperty', target);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('hasOwnProperty', spy);
 
       spy.reset();
 
-      trigger('hasOwnProperty', target);
+      dispatch('hasOwnProperty', target);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should add direct event when passed empty string for selector', function() {
@@ -445,17 +445,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', '', spy);
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should add, handle, and remove events directly on the window', function() {
@@ -465,17 +465,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', spy);
 
-      trigger('customEvent', window);
+      dispatch('customEvent', window);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', window);
+      dispatch('customEvent', window);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should handle events that bubble to window from document', function() {
@@ -485,17 +485,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', spy);
 
-      trigger('customEvent', document);
+      dispatch('customEvent', document);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', document);
+      dispatch('customEvent', document);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should handle events that bubble to window from document.documentElement', function() {
@@ -505,17 +505,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', spy);
 
-      trigger('customEvent', document.documentElement);
+      dispatch('customEvent', document.documentElement);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', document.documentElement);
+      dispatch('customEvent', document.documentElement);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should handle events that bubble to window from document.body', function() {
@@ -525,17 +525,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', spy);
 
-      trigger('customEvent', document.body);
+      dispatch('customEvent', document.body);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event');
 
       vent.off('customEvent', spy);
 
       spy.reset();
 
-      trigger('customEvent', document.body);
+      dispatch('customEvent', document.body);
 
-      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
     it('should call all listeners when first listener removed during event callback', function() {
@@ -550,11 +550,11 @@ describe('Vent', function() {
       vent.on('customEvent', spy_2);
       vent.on('customEvent', spy_3);
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event on target element');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event on target element');
-      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after triggering event on target element');
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event on target element');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event on target element');
+      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after dispatching event on target element');
     });
 
     it('should call all listeners when middle listener removed during event callback', function() {
@@ -569,11 +569,11 @@ describe('Vent', function() {
       });
       vent.on('customEvent', spy_3);
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event on target element');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event on target element');
-      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after triggering event on target element');
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event on target element');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event on target element');
+      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after dispatching event on target element');
     });
 
     it('should call all listeners when last listener removed during event callback', function() {
@@ -588,31 +588,31 @@ describe('Vent', function() {
         spy_3();
       });
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after triggering event on target element');
-      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after triggering event on target element');
-      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after triggering event on target element');
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event on target element');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event on target element');
+      expect(spy_3.callCount).to.equal(1, 'spy_3 call count after dispatching event on target element');
     });
   });
 
-  describe('trigger', function() {
-    it('should trigger events', function() {
+  describe('dispatch', function() {
+    it('should dispatch events', function() {
       var spy = sinon.spy();
       vent.on('customEvent', spy);
-      vent.trigger('customEvent');
-      expect(spy.callCount).to.equal(1, 'spy call count after event triggered');
+      vent.dispatch('customEvent');
+      expect(spy.callCount).to.equal(1, 'spy call count after event dispatched');
     });
 
     it('should set options.bubbles = true by default', function() {
       var spy_window = sinon.spy();
       window.addEventListener('customEvent', spy_window);
 
-      vent.trigger('customEvent');
-      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event triggered');
+      vent.dispatch('customEvent');
+      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event dispatched');
 
-      vent.trigger('customEvent', { cancelable: false });
-      expect(spy_window.callCount).to.equal(2, 'spy_window call count after event triggered again');
+      vent.dispatch('customEvent', { cancelable: false });
+      expect(spy_window.callCount).to.equal(2, 'spy_window call count after event dispatched again');
     });
 
     it('should support options.bubbles = false', function() {
@@ -622,12 +622,12 @@ describe('Vent', function() {
       window.addEventListener('customEvent', spy_window);
       target.addEventListener('customEvent', spy_direct);
 
-      vent.trigger('customEvent', {
+      vent.dispatch('customEvent', {
         bubbles: false
       });
 
-      expect(spy_window.callCount).to.equal(0, 'spy_window call count after event triggered');
-      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after event triggered');
+      expect(spy_window.callCount).to.equal(0, 'spy_window call count after event dispatched');
+      expect(spy_direct.callCount).to.equal(1, 'spy_direct call count after event dispatched');
     });
 
     it('should correctly set event.defaultPrevented if event.preventDefault() called', function() {
@@ -638,10 +638,10 @@ describe('Vent', function() {
         spy_window();
       });
 
-      var event = vent.trigger('customEvent');
+      var event = vent.dispatch('customEvent');
 
-      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event triggered');
-      expect(event.defaultPrevented).to.equal(true, 'event.defaultPrevented after event triggered');
+      expect(spy_window.callCount).to.equal(1, 'spy_window call count after event dispatched');
+      expect(event.defaultPrevented).to.equal(true, 'event.defaultPrevented after event dispatched');
       expect(event).to.be.instanceof(Event);
     });
   });
@@ -660,17 +660,17 @@ describe('Vent', function() {
 
       vent.on('customEvent', '.content', spy);
 
-      trigger('customEvent', section);
+      dispatch('customEvent', section);
 
-      expect(spy.callCount).to.equal(0, 'Call count after triggering event on other element');
+      expect(spy.callCount).to.equal(0, 'Call count after dispatching event on other element');
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy.callCount).to.equal(0, 'Call count after triggering event on root element');
+      expect(spy.callCount).to.equal(0, 'Call count after dispatching event on root element');
 
-      trigger('customEvent', content);
+      dispatch('customEvent', content);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event on target element');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event on target element');
     });
 
     it('should add, handle, and remove events with basic delegation on window', function() {
@@ -687,20 +687,20 @@ describe('Vent', function() {
 
       vent.on('customEvent', '.content', spy);
 
-      trigger('customEvent', section);
+      dispatch('customEvent', section);
 
-      expect(spy.callCount).to.equal(0, 'Call count after triggering event on other element');
+      expect(spy.callCount).to.equal(0, 'Call count after dispatching event on other element');
 
-      trigger('customEvent', window);
+      dispatch('customEvent', window);
 
-      expect(spy.callCount).to.equal(0, 'Call count after triggering event on the window itself');
+      expect(spy.callCount).to.equal(0, 'Call count after dispatching event on the window itself');
 
-      trigger('customEvent', content);
+      dispatch('customEvent', content);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event on target element');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event on target element');
     });
 
-    it('should handle events triggered on textNodes within the delegated elements', function() {
+    it('should handle events dispatched on textNodes within the delegated elements', function() {
       var spy = sinon.spy();
 
       target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
@@ -709,13 +709,13 @@ describe('Vent', function() {
 
       vent.on('customEvent', '.content', spy);
 
-      trigger('customEvent', p);
+      dispatch('customEvent', p);
 
-      expect(spy.callCount).to.equal(1, 'Call count after triggering event on target element');
+      expect(spy.callCount).to.equal(1, 'Call count after dispatching event on target element');
 
-      trigger('customEvent', textNode);
+      dispatch('customEvent', textNode);
 
-      expect(spy.callCount).to.equal(2, 'Call count after triggering event on textNode child of target');
+      expect(spy.callCount).to.equal(2, 'Call count after dispatching event on textNode child of target');
     });
 
     it('should add, handle, and remove events with basic delegation and namespaces', function() {
@@ -730,30 +730,30 @@ describe('Vent', function() {
       vent.on('customEvent.ns', '.myClass', spy_delegate);
       vent.on('customEvent.ns', spy_root);
 
-      trigger('customEvent', div);
+      dispatch('customEvent', div);
 
-      expect(spy_delegate.callCount).to.equal(1, 'delegate call count after triggering event on other element');
-      expect(spy_root.callCount).to.equal(1, 'root call count after triggering event on other element');
+      expect(spy_delegate.callCount).to.equal(1, 'delegate call count after dispatching event on other element');
+      expect(spy_root.callCount).to.equal(1, 'root call count after dispatching event on other element');
 
       vent.off('.ns', '.myClass');
 
       spy_delegate.reset();
       spy_root.reset();
 
-      trigger('customEvent', div);
+      dispatch('customEvent', div);
 
-      expect(spy_delegate.callCount).to.equal(0, 'delegate call count after off(ns, sel) events and triggering event on target element');
-      expect(spy_root.callCount).to.equal(1, 'root call count after off(ns, sel) events and triggering event on target element');
+      expect(spy_delegate.callCount).to.equal(0, 'delegate call count after off(ns, sel) events and dispatching event on target element');
+      expect(spy_root.callCount).to.equal(1, 'root call count after off(ns, sel) events and dispatching event on target element');
 
       vent.off('.ns');
 
       spy_delegate.reset();
       spy_root.reset();
 
-      trigger('customEvent', div);
+      dispatch('customEvent', div);
 
-      expect(spy_delegate.callCount).to.equal(0, 'delegate call count after off(ns) and triggering event on target element');
-      expect(spy_root.callCount).to.equal(0, 'root call count after off(ns) and triggering event on target element');
+      expect(spy_delegate.callCount).to.equal(0, 'delegate call count after off(ns) and dispatching event on target element');
+      expect(spy_root.callCount).to.equal(0, 'root call count after off(ns) and dispatching event on target element');
     });
 
     function testScopedSelectorPrefix(scopePrefix) {
@@ -772,7 +772,7 @@ describe('Vent', function() {
         var lis = outer.querySelectorAll('li');
 
         for (var i = 0; i < lis.length; i++) {
-          trigger('customEvent', lis[i]);
+          dispatch('customEvent', lis[i]);
         }
 
         expect(spy.callCount).to.equal(outer.children.length, 'spy call count as compared to lis element length');
@@ -794,13 +794,13 @@ describe('Vent', function() {
       vent.on('second.ns', spy_second);
       vent.on('noNS', spy_noNS); // Make sure it doesn't kill events outside of namespace
 
-      trigger('first', target);
-      trigger('second', target);
-      trigger('noNS', target);
+      dispatch('first', target);
+      dispatch('second', target);
+      dispatch('noNS', target);
 
-      expect(spy_first.callCount).to.equal(1, 'first.ns spy call count after triggering event');
-      expect(spy_second.callCount).to.equal(1, 'second.ns spy call count after triggering event');
-      expect(spy_noNS.callCount).to.equal(1, 'noNS spy call count after triggering event');
+      expect(spy_first.callCount).to.equal(1, 'first.ns spy call count after dispatching event');
+      expect(spy_second.callCount).to.equal(1, 'second.ns spy call count after dispatching event');
+      expect(spy_noNS.callCount).to.equal(1, 'noNS spy call count after dispatching event');
 
       vent.off('.ns');
 
@@ -808,13 +808,13 @@ describe('Vent', function() {
       spy_second.reset();
       spy_noNS.reset();
 
-      trigger('first', target);
-      trigger('second', target);
-      trigger('noNS', target);
+      dispatch('first', target);
+      dispatch('second', target);
+      dispatch('noNS', target);
 
-      expect(spy_first.callCount).to.equal(0, 'first.ns spy call count after off(ns) and triggering event');
-      expect(spy_second.callCount).to.equal(0, 'second.ns spy count after off(ns) and triggering event');
-      expect(spy_noNS.callCount).to.equal(1, 'noNS spy count after off(ns) and triggering event');
+      expect(spy_first.callCount).to.equal(0, 'first.ns spy call count after off(ns) and dispatching event');
+      expect(spy_second.callCount).to.equal(0, 'second.ns spy count after off(ns) and dispatching event');
+      expect(spy_noNS.callCount).to.equal(1, 'noNS spy count after off(ns) and dispatching event');
     });
 
     it('should support multiple namespaces for a single listener', function() {
@@ -828,12 +828,12 @@ describe('Vent', function() {
       vent.on('customEvent.ns1.ns2', spy_ns1ns2);
       vent.on('customEvent.ns1.ns2.ns3', spy_ns1ns2ns3);
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after triggering event');
-      expect(spy_ns2.callCount).to.equal(1, 'spy_ns2 call count after triggering event');
-      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 call count after triggering event');
-      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after triggering event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after dispatching event');
+      expect(spy_ns2.callCount).to.equal(1, 'spy_ns2 call count after dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 call count after dispatching event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after dispatching event');
 
       vent.off('.ns2');
 
@@ -842,12 +842,12 @@ describe('Vent', function() {
       spy_ns1ns2.reset();
       spy_ns1ns2ns3.reset();
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns2 and triggering event');
-      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns2 and triggering event');
-      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns2 and triggering event');
-      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after triggering event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns2 and dispatching event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns2 and dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns2 and dispatching event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after dispatching event');
 
       vent.off('.ns1.ns2.ns3');
 
@@ -856,25 +856,25 @@ describe('Vent', function() {
       spy_ns1ns2.reset();
       spy_ns1ns2ns3.reset();
 
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
-      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after triggering event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after dispatching event');
 
       vent.off('.ns1');
-      trigger('customEvent', target);
+      dispatch('customEvent', target);
 
       spy_ns1.reset();
       spy_ns2.reset();
       spy_ns1ns2.reset();
       spy_ns1ns2ns3.reset();
 
-      expect(spy_ns1.callCount).to.equal(0, 'spy_ns1 call count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns1ns2.callCount).to.equal(0, 'spy_ns1ns2 count after removing .ns1.ns2 and triggering event');
-      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after triggering event');
+      expect(spy_ns1.callCount).to.equal(0, 'spy_ns1 call count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(0, 'spy_ns1ns2 count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after dispatching event');
     });
 
   });

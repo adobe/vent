@@ -22,7 +22,7 @@ There are other event delegation libraries out there, so here's how Vent is diff
 
 * **NS**: Supports event namespaces, i.e. `click.myApp`
 * **Scoped**: Supports scoped selectors, i.e. `> .immediateChild`
-* **Real DOM**: Triggers real, bubbling DOM events
+* **Real DOM**: Dispatches real, bubbling DOM events
 * **Capture**: Supports listening to events during the capture phase
 * **Tests**: Has comprehensive tests
 
@@ -56,7 +56,7 @@ Name         | Type     | Required | Default  | Description
 -------------|----------|----------| ---------|------------
 `eventName`  | String   | **yes**  | -        | The event name to listen for, including optional namespace(s).
 `selector`   | String   | no       | -        | The selector to use for event delegation.
-`handler`    | Function | **yes**  | -        | The function that will be called when the event is triggered.
+`handler`    | Function | **yes**  | -        | The function that will be called when the event is fired.
 `useCapture` | Boolean  | no       | false    | Only remove listeners with useCapture set to the value passed in.
 
 
@@ -74,15 +74,15 @@ Name         | Type     | Required | Description
 `useCapture` | Boolean  | no       | Only remove listeners that are captured.
 
 
-#### vent.trigger(eventName[, options]) → CustomEvent
+#### vent.dispatch(eventName[, options]) → CustomEvent
 
-Trigger a custom event.
+Dispatch a custom event at the root element.
 
 ##### Parameters
 
 Name                  | Type     | Required | Default  | Description
 ----------------------|----------|----------| ---------|------------
-`eventName`           | String   | **yes**  | -        | The name of the event to trigger.
+`eventName`           | String   | **yes**  | -        | The name of the event to dispatch.
 `options`             | Object   | no       | -        | CustomEvent options.
 `options.bubbles`     | Boolean  | no       | true     | Whether the event should bubble.
 `options.cancelable`  | Boolean  | no       | true     | Whether the event should be cancelable.
@@ -237,28 +237,28 @@ vent.on('click', '.reset', function handler(event) {
 The child element does not have to be in the DOM at the time the listener is added.
 
 
-### Triggering CustomEvents
+### Dispatching CustomEvents
 
-Vent makes it easy to trigger CustomEvents from the root element of the Vent instance. Unlike `jQuery.trigger()`, events triggered with `Vent.trigger()` are *real DOM events* that can be listened to with `Element.addEventListener`, `jQuery.on()`, or `Vent.on()`.
+Vent makes it easy to dispatch CustomEvents from the root element of the Vent instance. Unlike `jQuery.trigger()`, events dispatched with `Vent.dispatch()` are *real DOM events* that can be listened to with `Element.addEventListener`, `jQuery.on()`, or `Vent.on()`.
 
-Trigger a basic, bubbling custom event:
+Dispatch a basic, bubbling custom event:
 
 ```js
-vent.trigger('launch');
+vent.dispatch('launch');
 ```
 
-Trigger a basic, non-bubbling custom event:
+Dispatch a basic, non-bubbling custom event:
 
 ```js
-vent.trigger('launch', {
+vent.dispatch('launch', {
   bubbles: false,
 });
 ```
 
-Trigger a bubbling custom event with details:
+Dispatch a bubbling custom event with details:
 
 ```js
-vent.trigger('launch', {
+vent.dispatch('launch', {
   detail: {
     startTime: Date.getTime()
   },
