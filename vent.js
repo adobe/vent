@@ -86,10 +86,10 @@
 
     // Map of event names to array of events
     // Don't inherit from Object so we don't collide with properties on its prototype
-    this._eventsByType = Object.create(null);
+    this._listenersByType = Object.create(null);
 
     // All events
-    this._allEvents = [];
+    this._allListeners = [];
 
     var self = this;
     /**
@@ -122,7 +122,7 @@
     @memberof Vent
   */
   Vent.prototype._executeListeners = function(event, captureOnly) {
-    var listeners = this._eventsByType[event.type];
+    var listeners = this._listenersByType[event.type];
 
     if (!listeners) {
       throw new Error('Vent: _executeListeners called in response to event we are not listening to');
@@ -219,18 +219,18 @@
     }
 
     // Get/create the list for the event type
-    var eventList = this._eventsByType[eventName] = this._eventsByType[eventName] || [];
+    var listenerList = this._listenersByType[eventName] = this._listenersByType[eventName] || [];
 
     // Check if we need to add actual listeners for the given phase
-    if (useCapture && !eventList.capturePhaseListenerAdded) {
+    if (useCapture && !listenerList.capturePhaseListenerAdded) {
       // Add the capture phase listener
       this.el.addEventListener(eventName, this._executeCapturePhaseListeners, true);
-      eventList.capturePhaseListenerAdded = true;
+      listenerList.capturePhaseListenerAdded = true;
     }
-    else if (!eventList.bubblePhaseListenerAdded) {
+    else if (!listenerList.bubblePhaseListenerAdded) {
       // Add the bubble phase listener
       this.el.addEventListener(eventName, this._executeBubblePhaseListeners, false);
-      eventList.bubblePhaseListenerAdded = true;
+      listenerList.bubblePhaseListenerAdded = true;
     }
 
     // Set the special ID attribute if the selector is scoped
@@ -255,8 +255,8 @@
     };
 
     // Store relative to the current type and with everyone else
-    eventList.push(eventObject);
-    this._allEvents.push(eventObject);
+    listenerList.push(eventObject);
+    this._allListeners.push(eventObject);
   };
 
   /**
@@ -313,41 +313,39 @@
       eventName = null;
     }
 
-    var event;
+    var listener;
     var index;
-    var events = this._allEvents;
-    for (var i = 0; i < this._allEvents.length; i++) {
-      event = this._allEvents[i];
+    var listeners = this._allListeners;
+    for (var i = 0; i < listeners.length; i++) {
+      listener = listeners[i];
 
       if (
-        (eventName === null || event.eventName === eventName) &&
-        (selector === null || event.selector === selector) &&
-        (handler === null || event.handler === handler) &&
-        (useCapture === null || event.useCapture === useCapture) &&
+        (eventName === null || listener.eventName === eventName) &&
+        (selector === null || listener.selector === selector) &&
+        (handler === null || listener.handler === handler) &&
+        (useCapture === null || listener.useCapture === useCapture) &&
         (
-          // Remove matching events, regardless of namespace
+          // Remove matching listeners, regardless of namespace
           namespaces === null ||
           // Listener specifies a matching namespace
-          (event.namespaces && intersects(namespaces, event.namespaces))
+          (listener.namespaces && intersects(namespaces, listener.namespaces))
         )
       ) {
-        // Remove the event info
-        this._allEvents.splice(i, 1);
+        // Remove the listeners info
+        this._allListeners.splice(i, 1);
 
         // Array length changed, so check the same index on the next iteration
         i--;
 
-        // Don't stop now! We want to remove all matching events
-
-        // Get index in eventsByType map
-        if (!this._eventsByType[event.eventName]) {
-          throw new Error('Vent: Missing eventsByType for '+event.eventName);
+        // Get index in listenersByType map
+        if (!this._listenersByType[listener.eventName]) {
+          throw new Error('Vent: Missing listenersByType for '+listener.eventName);
         }
 
-        index = this._eventsByType[event.eventName].indexOf(event);
-
+        // Find the event info in the other lookup list
+        index = this._listenersByType[listener.eventName].indexOf(listener);
         if (index !== -1) {
-          var mapList = this._eventsByType[event.eventName];
+          var mapList = this._listenersByType[listener.eventName];
 
           // Remove from the map
           mapList.splice(index, 1);
@@ -356,20 +354,21 @@
           if (mapList.length === 0) {
             // Remove the actual listeners, if necessary
             if (mapList.bubblePhaseListenerAdded) {
-              this.el.removeEventListener(event.eventName, this._executeBubblePhaseListeners, false);
+              this.el.removeEventListener(listener.eventName, this._executeBubblePhaseListeners, false);
             }
 
             if (mapList.capturePhaseListenerAdded) {
-              this.el.removeEventListener(event.eventName, this._executeCapturePhaseListeners, true);
+              this.el.removeEventListener(listener.eventName, this._executeCapturePhaseListeners, true);
             }
 
             // Avoid using delete operator for performance
-            this._eventsByType[event.eventName] = null;
+            this._listenersByType[listener.eventName] = null;
           }
         }
         else {
-          throw new Error('Vent: Event existed in allEvents, but did not exist in eventsByType');
+          throw new Error('Vent: Event existed in allEvents, but did not exist in listenersByType');
         }
+        // Don't stop now! We want to remove all matching listeners, so continue to loop
       }
     }
 
@@ -462,8 +461,8 @@
     this.off();
 
     // Remove all references
-    this._eventsByType = null;
-    this._allEvents = null;
+    this._listenersByType = null;
+    this._allListeners = null;
     this.el = null;
   };
 
