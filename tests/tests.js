@@ -402,7 +402,7 @@ describe('Vent', function() {
     });
   });
 
-  describe('direct events', function() {
+  describe('basic events', function() {
 
     it('should add, handle, and remove events directly on an element', function() {
       var spy = sinon.spy();
@@ -418,6 +418,24 @@ describe('Vent', function() {
       spy.reset();
 
       trigger('customEvent', target);
+
+      expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
+    });
+
+    it('should support silly event names', function() {
+      var spy = sinon.spy();
+
+      vent.on('hasOwnProperty', spy);
+
+      trigger('hasOwnProperty', target);
+
+      expect(spy.callCount).to.equal(1, 'Call count after triggering event');
+
+      vent.off('hasOwnProperty', spy);
+
+      spy.reset();
+
+      trigger('hasOwnProperty', target);
 
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and triggering event');
     });

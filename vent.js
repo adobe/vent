@@ -85,7 +85,8 @@
     this.el = el;
 
     // Map of event names to array of events
-    this._eventsByType = {};
+    // Don't inherit from Object so we don't collide with properties on its prototype
+    this._eventsByType = Object.create(null);
 
     // All events
     this._allEvents = [];
