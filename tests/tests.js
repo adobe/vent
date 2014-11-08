@@ -1,3 +1,4 @@
+/* global -event */
 describe('Vent', function() {
   var target;
   var vent;
@@ -115,7 +116,7 @@ describe('Vent', function() {
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing listener');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing listener');
 
-      vent.on('event_1', spy_3)
+      vent.on('event_1', spy_3);
       dispatch('event_1', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing listener');
@@ -372,7 +373,7 @@ describe('Vent', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
       var inner = target.querySelector('.inner');
 
-      vent.on('customEvent', '.inner', function(event) {
+      vent.on('customEvent', '.inner', function() {
         spy_inner();
         return false;
       });
@@ -480,7 +481,6 @@ describe('Vent', function() {
 
       innerContainer.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
       var inner = innerContainer.querySelector('.inner');
-      var outer = innerContainer.querySelector('.outer');
 
       vent.on('customEvent', '.inner', function(event) {
         console.log('spy_ventInner + stopImmedatePropagation');
@@ -677,8 +677,6 @@ describe('Vent', function() {
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
-      var node3 = target.querySelector('#node3');
-      var node4 = target.querySelector('#node4');
 
       var vent = new Vent(node0);
 
@@ -710,8 +708,6 @@ describe('Vent', function() {
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
-      var node3 = target.querySelector('#node3');
-      var node4 = target.querySelector('#node4');
 
       var vent = new Vent(node0);
 
@@ -856,7 +852,6 @@ describe('Vent', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
-      var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
       var node4 = target.querySelector('#node4');
 
@@ -906,6 +901,7 @@ describe('Vent', function() {
         spy_bubble_vent_node2_2();
       }, false);
 
+      // var node2 = target.querySelector('#node2');
       // var spy_bubble_native_node2 = sinon.spy();
       // node2.addEventListener('customEvent', function() {
       //   // Should be called
@@ -979,8 +975,6 @@ describe('Vent', function() {
     it('should call capture and bubble phase listeners in the right order', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
-      var node1 = target.querySelector('#node1');
-      var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
       var vent = new Vent(node0);
@@ -998,13 +992,13 @@ describe('Vent', function() {
       }, true);
 
       var spy_capture_vent_node1 = sinon.spy();
-      vent.on('customEvent', '#node1', function(event) {
+      vent.on('customEvent', '#node1', function() {
         console.log('spy_capture_vent_node1');
         spy_capture_vent_node1();
       }, true);
 
       var spy_capture_vent_node1_2 = sinon.spy();
-      vent.on('customEvent', '#node1', function(event) {
+      vent.on('customEvent', '#node1', function() {
         console.log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
@@ -1157,14 +1151,14 @@ describe('Vent', function() {
       }, true);
 
       var spy_capture_vent_node1_2 = sinon.spy();
-      vent.on('customEvent', '#node1', function(event) {
+      vent.on('customEvent', '#node1', function() {
         // Should be called
         console.log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       var spy_capture_native_node1 = sinon.spy();
-      node1.addEventListener('customEvent', function(event) {
+      node1.addEventListener('customEvent', function() {
         // Should be called
         console.log('spy_capture_native_node1');
         spy_capture_native_node1();
@@ -1216,7 +1210,6 @@ describe('Vent', function() {
     it('should have correct behavior for stopImmediatePropagation() for listeners added in the capture phase', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
-      var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
@@ -1243,13 +1236,14 @@ describe('Vent', function() {
       }, true);
 
       var spy_capture_vent_node1_2 = sinon.spy();
-      vent.on('customEvent', '#node1', function(event) {
+      vent.on('customEvent', '#node1', function() {
         console.log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       // This is impossible
       // @todo document this
+      // var node1 = target.querySelector('#node1');
       // var spy_capture_native_node1 = sinon.spy();
       // node1.addEventListener('customEvent', function(event) {
       //   // Should NOT be called
@@ -1312,7 +1306,6 @@ describe('Vent', function() {
       var capturePhase;
 
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
-      var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
 
       vent.on('customEvent', '#node0', function(event) {
@@ -1588,7 +1581,7 @@ describe('Vent', function() {
 
       target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
       // Give the root the same selector to see if it fails
-      target.className = 'content'
+      target.className = 'content';
 
       var section = target.querySelector('.section');
       var content = target.querySelector('.content');

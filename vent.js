@@ -1,19 +1,5 @@
 (function(global) {
   /**
-    Check if there is a common element in two arrays
-
-    @ignore
-  */
-  function intersects(left, right) {
-    for (var i = 0; i < left.length; i++) {
-      if (right.indexOf(left[i]) !== -1) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
     Check if there if the first array contains every element in the second array
 
     @ignore
@@ -129,8 +115,6 @@
     // All events
     this._allListeners = [];
 
-    var self = this;
-
     this._executeListeners = this._executeListeners.bind(this);
   }
 
@@ -197,7 +181,7 @@
         }
       } // end if
     } // end executeListeners
-  }
+  };
 
   /**
     Handles all events added with Vent
@@ -236,8 +220,6 @@
       // Build an array of the DOM tree between the root and the element that dispatched the event
       // The HTML specification states that, if the tree is modified during dispatch, the event should bubble as it was before
       // Building this list before we dispatch allows us to simulate that behavior
-      var targetListIndex;
-      var currentTargetElement;
       var tempTarget = target;
       var targetList = [];
       buildTree: while (tempTarget && tempTarget !== this.el) {
@@ -245,6 +227,10 @@
         tempTarget = tempTarget.parentNode;
       }
       targetList.push(this.el);
+
+      var targetListIndex;
+      var currentTargetElement;
+      var stopPropagationListener;
 
       // Simulate the capture phase by trickling down the target list
       trickelDown: for (targetListIndex = targetList.length - 1; targetListIndex >= 0; targetListIndex--) {
@@ -271,16 +257,16 @@
         event._ventPropagationStopped
       ) {
         // Use the appropriate listener
-        var listener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInCapturePhase : _stopPropagationInCapturePhase;
+        stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInCapturePhase : _stopPropagationInCapturePhase;
 
         // Stop propagation once the actual event reaches the node in question
-        currentTargetElement.addEventListener(event.type, listener, true);
+        currentTargetElement.addEventListener(event.type, stopPropagationListener, true);
       }
       else if (listeners.length) {
         // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
         bubbleUp: for (targetListIndex = 0; targetListIndex < targetList.length; targetListIndex++) {
           if (!listeners.length) {
-          // Stop bubbling up if there are no more listeners to execute
+            // Stop bubbling up if there are no more listeners to execute
             break bubbleUp;
           }
           currentTargetElement = targetList[targetListIndex];
@@ -301,10 +287,10 @@
           event._ventPropagationStopped
         ) {
           // Use the appropriate listener
-          var listener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInBubblePhase : _stopPropagationInBubblePhase;
+          stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInBubblePhase : _stopPropagationInBubblePhase;
 
           // Stop propagation once the actual event reaches the node in question
-          currentTargetElement.addEventListener(event.type, listener, false);
+          currentTargetElement.addEventListener(event.type, stopPropagationListener, false);
         }
       }
 

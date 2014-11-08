@@ -1,0 +1,15 @@
+{
+  "browser": true,
+  "undef": true,
+  "unused": true,
+  "predef": [
+    "Vent",
+    "console",
+    "expect",
+    "it",
+    "afterEach",
+    "beforeEach",
+    "describe",
+    "sinon"
+  ]
+}
