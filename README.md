@@ -302,6 +302,33 @@ Call the listener in the *bubbling phase*:
 vent.on('click', '.selector', handler, false);
 ```
 
+### Shortcomings
+
+Because of the way event delegation works, you might find `preventDefault` doesn't do exactly what you expect it to.
+
+#### Vent and native events will not fire in the expected order
+
+Vent listens to DOM events in the capture phase, then simulates the capture and bubbling phases for its listeners. Because it simulates the capture and bubbling phases when it catches the event, native listeners on elements that descendants of the Vent instance's root element will fire **after** Vent listeners have fired.
+
+1. `#node2` dispatches a `click` event
+2. The event starts the *capture phase* and starts trickling down from the Window to `#node2`
+3. The Vent instance's `click` handler is called when the event reaches `#node0`
+4. Vent simulates the capture phase and trickles down until it reaches `#node2`, calling any delegated handlers along the way
+5. Vent simulates the bubble phase and bubbles back up until it reaches `#node0`, calling any delegated handlers along the way
+6. The event continues to trickle down in the *capture phase* until it reaches `#node2`, calling any handlers added with `addEventListener` along the way
+7. The event bubbles back up in the *bubble phase* until it reaches the Window, calling any handlers added with `addEventListener` along the way
+
+![Event order](http://i.imgur.com/rQfWo6O.png)
+
+
+#### Native listeners CANNOT `stopPropagation` to Vent listeners
+
+Because Vent's listeners run before those added natively with `addEventListener`, calling `stopPropagation` in a native event handler will have no effect -- Vent has already simulated capture / bubbling and called all of its handlers before the native event handler was called.
+
+#### Vent listeners CAN `stopPropagation` to native listeners
+
+While Vent is simulating the bubble and capture phases, it checks if any handler along the way called `stopPropgation`. If it does, Vent will add a native DOM listener to the delegated element that stops propagation at the correct time during the actual capture and bubbling phases of the event.
+
 
 ## Browser support
 
