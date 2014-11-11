@@ -190,8 +190,8 @@
         // Check if the event is the in right phase
         (listener.useCapture === useCapture)
       ) {
-        // Call handlers in the scope of the original target, passing the event along
-        returnValue = listener.handler.call(event.target, event);
+        // Call handlers in the scope of the delegate target, passing the event along
+        returnValue = listener.handler.call(target, event);
 
         // Prevent default and stopPropagation if the handler returned false
         if (returnValue === false) {

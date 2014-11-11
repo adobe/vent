@@ -1418,7 +1418,7 @@ describe('Vent', function() {
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
-    it.only('should add, handle, and remove events for an element when multiple listeners are added of the same type', function(done) {
+    it('should add, handle, and remove events for an element when multiple listeners are added of the same type', function() {
       var spy_1 = sinon.spy();
       var spy_2 = sinon.spy();
 
@@ -1428,13 +1428,8 @@ describe('Vent', function() {
       console.log('dispatching');
       dispatch('customEvent', target);
 
-      setTimeout(function() {
-        expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
-        expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
-
-        done();
-        console.log('done');
-      }, 200);
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
     });
 
     it('should add, handle, and remove events for an element when multiple listeners are added of the same type', function() {
@@ -1752,7 +1747,10 @@ describe('Vent', function() {
       var section = target.querySelector('.section');
       var content = target.querySelector('.content');
 
-      vent.on('customEvent', '.content', spy);
+      vent.on('customEvent', '.content', function() {
+        expect(this).to.equal(content);
+        spy();
+      });
 
       dispatch('customEvent', target);
 
@@ -1771,6 +1769,42 @@ describe('Vent', function() {
       expect(spy.callCount).to.equal(1, 'spy call count after dispatching event on delegate element');
     });
 
+    it('should correctly set context when calling delegate handlers', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+
+      var vent = new Vent(node0);
+
+      var spy_node0 = sinon.spy();
+      vent.on('customEvent', function(event) {
+        expect(this).to.equal(node0);
+        expect(event.target).to.equal(node2);
+        spy_node0()
+      });
+
+      var spy_node1 = sinon.spy();
+      vent.on('customEvent', '#node1', function(event) {
+        expect(this).to.equal(node1);
+        expect(event.target).to.equal(node2);
+        spy_node1();
+      });
+
+      var spy_node2 = sinon.spy();
+      vent.on('customEvent', '#node2', function(event) {
+        expect(this).to.equal(node2);
+        expect(event.target).to.equal(node2);
+        spy_node2()
+      });
+
+      dispatch('customEvent', node2);
+
+      expect(spy_node0.callCount).to.equal(1, 'spy_node0 call count after event dispatched');
+      expect(spy_node1.callCount).to.equal(1, 'spy_node1 call count after event dispatched');
+      expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after event dispatched');
+    });
+
     it('should add, handle, and remove events with and without basic delegation', function() {
       var spy_target = sinon.spy();
       var spy_delegate = sinon.spy();
@@ -1779,9 +1813,16 @@ describe('Vent', function() {
       target.innerHTML = window.__html__['tests/snippets/Section with paragraphs.html'];
 
       var content = target.querySelector('.content');
+      var section = target.querySelector('.section');
 
-      vent.on('customEvent', '.section', spy_delegate);
-      vent.on('customEvent', spy_target);
+      vent.on('customEvent', '.section', function() {
+        expect(this).to.equal(section, 'Value of this in listener on section');
+        spy_delegate();
+      });
+      vent.on('customEvent', function() {
+        expect(this).to.equal(target, 'Value of this in listener on target');
+        spy_target();
+      });
 
       dispatch('customEvent', content);
 
