@@ -24,14 +24,15 @@ There are other event delegation libraries out there, so here's how Vent is diff
 * **Scoped**: Supports scoped selectors, i.e. `> .immediateChild`
 * **Real DOM**: Dispatches real, bubbling DOM events
 * **Capture**: Supports listening to events during the capture phase
+* **stopPropagation**: Correctly handles `stopPropagation()` within delegate listeners
 * **Tests**: Has comprehensive tests
 
-Name            | NS?                | Scoped?            | Real DOM?         | Capture?          | Tests?
-----------------|:-------------------|:------------------:|:-----------------:|:-----------------:|:-------------------:
-[Vent]          | :white_check_mark: | :white_check_mark: | :white_check_mark:| :white_check_mark:| :white_check_mark:
-[jQuery]        | :white_check_mark: | :white_check_mark: | :x:               | :x:               | :white_check_mark:
-[Gator]         | :x:                | :x:                | :white_check_mark:| :x:               | :x:
-[ftdomdelegate] | :x:                | :x:                | :white_check_mark:| :white_check_mark:| :white_check_mark:
+Name            | NS?                | Scoped?            | Real DOM?         | Capture?          | stopProp?      | Tests?
+----------------|:-------------------|:------------------:|:-----------------:|:-----------------:|:-----------------:|:-------------------:
+[Vent]          | :white_check_mark: | :white_check_mark: | :white_check_mark:| :white_check_mark:| :white_check_mark:| :white_check_mark:
+[jQuery]        | :white_check_mark: | :white_check_mark: | :x:               | :x:               | :x:               | :white_check_mark:
+[Gator]         | :x:                | :x:                | :white_check_mark:| :x:               | :x:               | :x:
+[ftdomdelegate] | :x:                | :x:                | :white_check_mark:| :white_check_mark:| :x:               | :white_check_mark:
 
 [Vent]: #vent
 [jQuery]: https://github.com/jquery/jquery
