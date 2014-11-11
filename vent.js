@@ -99,22 +99,25 @@
   /**
     @class Vent
     @classdesc DOM event delegation
+
+    @param {HTMLElement|String} elementOrSelector
+      The element or selector indicating the element to use as the delegation root.
   */
-  function Vent(elOrSelector) {
+  function Vent(elementOrSelector) {
     if (this === global) {
       throw new Error('Vent must be invoked with the new keyword');
     }
 
-    var el;
-    if (typeof elOrSelector === 'string') {
-      el = document.querySelector(elOrSelector);
+    var root;
+    if (typeof elementOrSelector === 'string') {
+      root = document.querySelector(elementOrSelector);
     }
     else {
-      el = elOrSelector;
+      root = elementOrSelector;
     }
 
     // Store element
-    this.el = el;
+    this.root = root;
 
     // Map of event names to array of events
     // Don't inherit from Object so we don't collide with properties on its prototype
@@ -132,7 +135,7 @@
     @ignore
   */
   Vent.prototype._executeListenersAtElement = function(target, listeners, event, useCapture) {
-    var root = this.el;
+    var root = this.root;
     var id = this._id;
 
     var listener;
@@ -216,7 +219,7 @@
     });
 
     // Store a reference so we can remove our final listener
-    event._ventRoot = this.el;
+    event._ventRoot = this.root;
   };
 
   /**
@@ -258,11 +261,11 @@
       // Building this list before we dispatch allows us to simulate that behavior
       var tempTarget = target;
       var targetList = [];
-      buildTree: while (tempTarget && tempTarget !== this.el) {
+      buildTree: while (tempTarget && tempTarget !== this.root) {
         targetList.push(tempTarget);
         tempTarget = tempTarget.parentNode;
       }
-      targetList.push(this.el);
+      targetList.push(this.root);
 
       var targetListIndex;
       var currentTargetElement;
@@ -399,7 +402,7 @@
     var listenerList = this._listenersByType[eventName] = this._listenersByType[eventName] || [];
 
     // Add the actual listener
-    this.el.addEventListener(eventName, this._executeListeners, true);
+    this.root.addEventListener(eventName, this._executeListeners, true);
 
     // Set the special ID attribute if the selector is scoped
     var listenerIsScoped = isScoped(selector);
@@ -409,7 +412,7 @@
 
       // Store a unique ID and set a special attribute we'll use to scope
       this._id = this._id || lastID++;
-      this.el.setAttribute('__vent-id__', this._id);
+      this.root.setAttribute('__vent-id__', this._id);
     }
 
     // Create an object with the event's information
@@ -521,7 +524,7 @@
           // Check if we've removed all the listeners for this event type
           if (mapList.length === 0) {
             // Remove the actual listener, if necessary
-            this.el.removeEventListener(listener.eventName, this._executeListeners, true);
+            this.root.removeEventListener(listener.eventName, this._executeListeners, true);
 
             // Avoid using delete operator for performance
             this._listenersByType[listener.eventName] = null;
@@ -568,7 +571,7 @@
       }
 
       var event = new CustomEvent(eventName, options);
-      this.el.dispatchEvent(event);
+      this.root.dispatchEvent(event);
 
       return event;
     };
@@ -590,7 +593,7 @@
       event.initCustomEvent(eventName, options.bubbles, options.cancelable, options.detail);
 
       // Dispatch the event, checking the return value to see if preventDefault() was called
-      var defaultPrevented = !this.el.dispatchEvent(event);
+      var defaultPrevented = !this.root.dispatchEvent(event);
 
       // Check if the defaultPrevented status was correctly stored back to the event object
       if (defaultPrevented !== event.defaultPrevented) {
@@ -625,7 +628,7 @@
     // Remove all references
     this._listenersByType = null;
     this._allListeners = null;
-    this.el = null;
+    this.root = null;
   };
 
   // Expose globally

@@ -50,12 +50,12 @@ describe('Vent', function() {
 
   it('should accept elements', function() {
     var vent = new Vent(target);
-    expect(vent.el).to.equal(target);
+    expect(vent.root).to.equal(target);
   });
 
   it('should accept selectors', function() {
     var vent = new Vent('#target');
-    expect(vent.el).to.equal(target);
+    expect(vent.root).to.equal(target);
   });
 
   it('should throw if on() called with a non-function handler', function() {
