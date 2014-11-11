@@ -239,7 +239,7 @@ The child element does not have to be in the DOM at the time the listener is add
 
 ### Dispatching CustomEvents
 
-Vent makes it easy to dispatch CustomEvents from the root element of the Vent instance. Unlike `jQuery.trigger()`, events dispatched with `Vent.dispatch()` are *real DOM events* that can be listened to with `Element.addEventListener`, `jQuery.on()`, or `Vent.on()`.
+Vent makes it easy to dispatch CustomEvents from the root element of the Vent instance. Unlike `jQuery.trigger()`, events dispatched with `Vent.dispatch()` are *real DOM events* that can be listened to with `Element.addEventListener()`, `jQuery.on()`, or `Vent.on()`.
 
 Dispatch a basic, bubbling custom event:
 
@@ -268,43 +268,49 @@ vent.dispatch('launch', {
 
 ### Capture vs Bubbling
 
-When an event is dispatched, it goes through two phases of *propagation* where it moves among ancestor elements in the DOM, executing listeners along the way.
+When an event is dispatched, it goes through two phases of *propagation* where it moves among ancestor elements in the DOM, executing handlers along the way.
 
-During the *capture phase*, the event "trickles down" from the `window` to the element that dispatched the event, then, during the *bubble phase*, the event "bubbles up" from the element that dispatched the event to the `window`.
+1. During the *capture phase*, the event "trickles down" from the `window` to the element that dispatched the event, executing event handlers handlers added with `useCapture = true` along the way.
 
+2. Then, during the *bubble phase*, the event "bubbles up" from the element that dispatched the event to the `window`, executing event handlers added with `useCapture = false`.
+
+Assuming the following HTML structure:
+
+```html
+<html>
+  <body>
+    <div id="node0">
+      <div id="node1">
+      </div>
+    </div>
+  </body>
+</html>
 ```
-                  1st     ^
-                 | C |   / \
------------------| A |--| B |-----------------
-| parent         | P |  | U |                |
-|                | T |  | U |                |
-|   -------------| U |--| B |-----------     |
-|   | child      | R |  | B |          |     |
-|   |            | E |  | L |          |     |
-|   |             \ /   | E |          |     |
-|   |              v     2nd           |     |
-|   ------------------------------------     |
-|                                            |
-----------------------------------------------
-```
 
-Listeners can be configured to be called during the *capture* or *bubbling phase*.
+An event dispatched from `#node1` will take the following path:
 
-Call the listener in the *capture phase*:
+![Event propagation](http://i.imgur.com/pfPK2NK.png)
+
+With Vent, listeners can be configured to be called during the *capture* or *bubbling phase*.
+
+To add an event listener in the *capture phase*:
 
 ```js
-vent.on('click', '.selector', handler, true);
+vent.on('click', '#node1', handler, true);
 ```
 
-Call the listener in the *bubbling phase*:
+To add an event listener in the *bubbling phase*:
 
 ```js
-vent.on('click', '.selector', handler, false);
+vent.on('click', '#node1', handler, false);
 ```
+
+In most cases, you'll want to add your event listeners in the bubbling phase.
+
 
 ### Shortcomings
 
-Because of the way event delegation works, you might find `preventDefault` doesn't do exactly what you expect it to.
+Because of how event delegation works, events added with Vent don't mix perfectly with events added with `addEventListener`. Here's what to expect.
 
 #### Vent and native events will not fire in the expected order
 
@@ -320,14 +326,13 @@ Vent listens to DOM events in the capture phase, then simulates the capture and 
 
 ![Event order](http://i.imgur.com/rQfWo6O.png)
 
-
 #### Native listeners CANNOT `stopPropagation` to Vent listeners
 
-Because Vent's listeners run before those added natively with `addEventListener`, calling `stopPropagation` in a native event handler will have no effect -- Vent has already simulated capture / bubbling and called all of its handlers before the native event handler was called.
+Because Vent's listeners run before those added natively with `addEventListener`, calling `stopPropagation` in a native event handler on an descendant of Vent's root element will have no effect -- Vent has already simulated capture / bubbling and called all of its handlers before the native event handler was called.
 
 #### Vent listeners CAN `stopPropagation` to native listeners
 
-While Vent is simulating the bubble and capture phases, it checks if any handler along the way called `stopPropgation`. If it does, Vent will add a native DOM listener to the delegated element that stops propagation at the correct time during the actual capture and bubbling phases of the event.
+While Vent is simulating the bubble and capture phases, it checks if any handler along the way called `stopPropagation`. If it does, Vent will add a native DOM listener to the delegated element that stops propagation at the correct time during the actual capture and bubbling phases of the event.
 
 
 ## Browser support
