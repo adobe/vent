@@ -210,11 +210,18 @@
   /**
     Add an event listener so we can stop the propagation of the actual event during the desired phase.
 
-    Vent always listens to events in the capture phase so we can explicitly control behavior
-    In order for stopPropagation and stopImmediatePropagation to correctly stop handlers from being called, we have to get tricky
-    If a Vent listener calls stopPropagation, we need to simulate this so that listeners added natively are not called as expected
-    To achieve this, we'll add an event listener that will call stopPropagation on the real event in the correct phase
-    We'll also need to clean these listeners up if stopPropagation is called
+    Vent always listens to events at the root element in the capture phase so we can be sure to get the event in case a native listener calls stopPropagation.
+    Users may want to stopPropagation in a delegate listener somewhere further down the DOM, or potentially on the way back up in the bubble phase.
+    In these cases, Vent can't simply call stopPropagation on the actual event, otherwise the event would not continue to correctly propagate.
+
+    Instead, when a delegate listener calls stopPropagation, we need to wait until the event actually propagates to the element of interest before stopping propagation.
+    To achieve this, we'll add an event listener to the element the simulated event propagation was at when the user called stopPropagation
+    that will call stopPropagation as the event propagates.
+
+    This will make it so the propagation of the event is stopped at the element and in the phase the user asked for it to be instead of at the root in the capture phase.
+    This enables Vent delegate listeners to stop propagation to native listeners, but does not make it so native listeners can stop propagation to Vent listeners.
+
+    We'll store the list of listeners so we can remove them in case the event never propagates to their element.
 
     @private
   */
