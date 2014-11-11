@@ -1,4 +1,14 @@
 (function(global) {
+  // The next ID we'll use for scoped delegation
+  var lastID = 0;
+
+  /*
+    Matches selectors that are scoped, such as:
+      > selector
+      :scope > selector
+  */
+  var scopedSelectorRegex = /^\s*(>|:scope\s*>)/;
+
   /**
     Check if the first array contains every element in the second array
 
@@ -12,13 +22,6 @@
     }
     return true;
   }
-
-  /*
-    Matches selectors that are scoped, such as:
-      > selector
-      :scope > selector
-  */
-  var scopedSelectorRegex = /^\s*(>|:scope\s*>)/;
 
   /**
     Check if the provided selector is scoped (has context)
@@ -93,9 +96,6 @@
     return matchesSelector;
   }());
 
-  // The next ID we'll use for scoped delegation
-  var lastID = 0;
-
   /**
     @class Vent
     @classdesc DOM event delegation
@@ -143,14 +143,62 @@
   }
 
   /**
+    Check if the listener should fire on the given rooted target
+
+    @ignore
+  */
+  Vent.prototype._listenerMatchesRootTarget = function(listener, target) {
+    return (
+      // When no selector is provided
+      listener.selector === null &&
+      (
+        // Execute if we've landed on the root
+        target === this.root
+      )
+    );
+  };
+
+  /**
+    Check if the listener should fire on the given delegated target
+
+    @ignore
+  */
+  Vent.prototype._listenerMatchesDelegateTarget = function(listener, target) {
+    return (
+      // document does not support matches()
+      target !== document &&
+      // Don't bother with delegation on the root element
+      target !== this.root &&
+      // Check if the event is delegated
+      listener.selector !== null &&
+      // Only execute  if the selector matches
+      (
+        // Check if the selector has context
+        listener.isScoped ?
+        // Run the match using the root element's ID
+        matchesSelector.call(target, '[__vent-id__="'+this._id+'"] '+listener.selector)
+        // Run the match without context
+        : matchesSelector.call(target, listener.selector)
+      )
+    );
+  };
+
+  /**
+    Check if the listener matches the given event phase
+
+    @ignore
+  */
+  Vent.prototype._listenerMatchesEventPhase = function(listener, useCapture) {
+    // Check if the event is the in right phase
+    return (listener.useCapture === useCapture);
+  };
+
+  /**
     This function is responsible for checking if listeners should be executed for the current event
 
     @ignore
   */
   Vent.prototype._executeListenersAtElement = function(target, listeners, event, useCapture) {
-    var root = this.root;
-    var id = this._id;
-
     var listener;
     var returnValue;
 
@@ -159,36 +207,12 @@
       listener = listeners[listenerIndex];
 
       if (
-        // Check if the target elements matches for this listener
+        // Check if the target element matches for this listener
         (
-          (
-            // When no selector is provided
-            listener.selector === null &&
-            (
-              // Execute if we've landed on the root
-              target === root
-            )
-          ) ||
-          (
-            // document does not support matches()
-            target !== document &&
-            // Don't bother with delegation on the root element
-            target !== root &&
-            // Check if the event is delegated
-            listener.selector !== null &&
-            // Only execute  if the selector matches
-            (
-              // Check if the selector has context
-              listener.isScoped ?
-              // Run the match using the root element's ID
-              matchesSelector.call(target, '[__vent-id__="'+id+'"] '+listener.selector)
-              // Run the match without context
-              : matchesSelector.call(target, listener.selector)
-            )
-          )
+          this._listenerMatchesRootTarget(listener, target) ||
+          this._listenerMatchesDelegateTarget(listener, target)
         ) &&
-        // Check if the event is the in right phase
-        (listener.useCapture === useCapture)
+        this._listenerMatchesEventPhase(listener, useCapture)
       ) {
         // Call handlers in the scope of the delegate target, passing the event along
         returnValue = listener.handler.call(target, event);
