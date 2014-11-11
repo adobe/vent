@@ -154,7 +154,7 @@
     var listener;
     var returnValue;
 
-    // Execute each listener that means the criteria
+    // Execute each listener that meets the criteria
     executeListeners: for (var listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++) {
       listener = listeners[listenerIndex];
 
@@ -285,10 +285,10 @@
       var stopPropagationListener;
 
       // Simulate the capture phase by trickling down the target list
-      trickelDown: for (targetListIndex = targetList.length - 1; targetListIndex >= 0; targetListIndex--) {
+      trickleDown: for (targetListIndex = targetList.length - 1; targetListIndex >= 0; targetListIndex--) {
         if (!listeners.length) {
           // Stop trickling down if there are no more listeners to execute
-          break trickelDown;
+          break trickleDown;
         }
         currentTargetElement = targetList[targetListIndex];
         this._executeListenersAtElement(currentTargetElement, listeners, event, true);
@@ -299,7 +299,7 @@
           event._ventPropagationStopped
         ) {
           // Stop simulating trickle down
-          break trickelDown;
+          break trickleDown;
         }
       }
 
@@ -324,7 +324,7 @@
           currentTargetElement = targetList[targetListIndex];
           this._executeListenersAtElement(currentTargetElement, listeners, event, false);
 
-          // Stop simulating the buble phase if a handler told us to
+          // Stop simulating the bubble phase if a handler told us to
           if (
             event._ventImmediatePropagationStopped ||
             event._ventPropagationStopped
@@ -615,7 +615,7 @@
       if (defaultPrevented !== event.defaultPrevented) {
         // dispatchEvent() doesn't correctly set event.defaultPrevented in IE 9
         // However, it does return false if preventDefault() was called
-        // Unfortunately, the returned event's defaultPrevented property is readonly
+        // Unfortunately, the returned event's defaultPrevented property is read-only
         // We need to work around this such that (patchedEvent instanceof Event) === true
         // First, we'll create an object that uses the event as its prototype
         // This gives us an object we can modify that is still technically an instanceof Event
