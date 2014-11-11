@@ -123,9 +123,21 @@
     // Don't inherit from Object so we don't collide with properties on its prototype
     this._listenersByType = Object.create(null);
 
-    // All events
+    /*
+      A list of all of the listener objects tracked by this instance
+      Each item takes the following form:
+      {
+        eventName: String,
+        handler: Function,
+        namespaces: Array<string>,
+        selector: String | null,
+        useCapture: Boolean,
+        isScoped: Boolean
+      }
+    */
     this._allListeners = [];
 
+    // Ensure _executeListeners always executes in the scope of this instance
     this._executeListeners = this._executeListeners.bind(this);
   }
 
