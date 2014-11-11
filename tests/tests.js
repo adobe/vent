@@ -1846,7 +1846,7 @@ describe('Vent', function() {
       expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 call count after dispatching event');
       expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after dispatching event');
 
-      vent.off('.ns2');
+      vent.off('.ns1.ns2.ns3');
 
       spy_ns1.reset();
       spy_ns2.reset();
@@ -1855,12 +1855,12 @@ describe('Vent', function() {
 
       dispatch('customEvent', target);
 
-      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns2 and dispatching event');
-      expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns2 and dispatching event');
-      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns2 and dispatching event');
-      expect(spy_ns1ns2ns3.callCount).to.equal(1, 'spy_ns1ns2ns3 call count after dispatching event');
+      expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns1.ns2.ns3 and dispatching event');
+      expect(spy_ns2.callCount).to.equal(1, 'spy_ns2 count after removing .ns1.ns2.ns3 and dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns1.ns2.ns3 and dispatching event');
+      expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after removing .ns1.ns2.ns3 and dispatching event');
 
-      vent.off('.ns1.ns2.ns3');
+      vent.off('.ns2');
 
       spy_ns1.reset();
       spy_ns2.reset();
@@ -1871,7 +1871,7 @@ describe('Vent', function() {
 
       expect(spy_ns1.callCount).to.equal(1, 'spy_ns1 call count after removing .ns1.ns2 and dispatching event');
       expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and dispatching event');
-      expect(spy_ns1ns2.callCount).to.equal(1, 'spy_ns1ns2 count after removing .ns1.ns2 and dispatching event');
+      expect(spy_ns1ns2.callCount).to.equal(0, 'spy_ns1ns2 count after removing .ns1.ns2 and dispatching event');
       expect(spy_ns1ns2ns3.callCount).to.equal(0, 'spy_ns1ns2ns3 call count after dispatching event');
 
       vent.off('.ns1');

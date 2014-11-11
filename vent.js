@@ -1,12 +1,12 @@
 (function(global) {
   /**
-    Check if there if the first array contains every element in the second array
+    Check if the first array contains every element in the second array
 
     @ignore
   */
-  function contains(left, right) {
-    for (var i = 0; i < right.length; i++) {
-      if (right.indexOf(left[i]) === -1) {
+  function contains(set, subSet) {
+    for (var i = 0; i < subSet.length; i++) {
+      if (set.indexOf(subSet[i]) === -1) {
         return false;
       }
     }
