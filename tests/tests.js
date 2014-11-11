@@ -1418,6 +1418,104 @@ describe('Vent', function() {
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
     });
 
+    it.only('should add, handle, and remove events for an element when multiple listeners are added of the same type', function(done) {
+      var spy_1 = sinon.spy();
+      var spy_2 = sinon.spy();
+
+      vent.on('customEvent', spy_1);
+      vent.on('customEvent', spy_2);
+
+      console.log('dispatching');
+      dispatch('customEvent', target);
+
+      setTimeout(function() {
+        expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+        expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
+
+        done();
+        console.log('done');
+      }, 200);
+    });
+
+    it('should add, handle, and remove events for an element when multiple listeners are added of the same type', function() {
+      var spy_1 = sinon.spy();
+      var spy_2 = sinon.spy();
+
+      vent.on('customEvent', spy_1);
+      vent.on('customEvent', spy_2);
+
+      dispatch('customEvent', target);
+
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
+      spy_1.reset();
+      spy_2.reset();
+
+      vent.off('customEvent', spy_1);
+
+      dispatch('customEvent', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after removing spy_1 listener');
+      spy_1.reset();
+      spy_2.reset();
+
+      vent.off('customEvent', spy_2);
+
+      dispatch('customEvent', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing both listeners');
+      expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing both listeners');
+    });
+
+    it('should add, handle, and remove events for an element when multiple listeners are added of different types', function() {
+      var spy_1 = sinon.spy();
+      var spy_2 = sinon.spy();
+
+      vent.on('customEvent_1', spy_1);
+      vent.on('customEvent_2', spy_2);
+
+      dispatch('customEvent_1', target);
+
+      expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching customEvent_1 event');
+      expect(spy_2.callCount).to.equal(0, 'spy_2 call count after dispatching customEvent_1 event');
+      spy_1.reset();
+      spy_2.reset();
+
+      dispatch('customEvent_2', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after dispatching customEvent_2 event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching customEvent_2 event');
+      spy_1.reset();
+      spy_2.reset();
+
+      vent.off('customEvent_1', spy_1);
+
+      dispatch('customEvent_1', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener and dispatching customEvent_1 event');
+      expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing spy_1 listener and dispatching customEvent_1 event');
+      spy_1.reset();
+      spy_2.reset();
+
+      dispatch('customEvent_2', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener and dispatching customEvent_2 event');
+      expect(spy_2.callCount).to.equal(1, 'spy_2 call count after removing spy_1 listener and dispatching customEvent_2 event');
+      spy_1.reset();
+      spy_2.reset();
+
+      vent.off('customEvent_2', spy_2);
+
+      dispatch('customEvent_1', target);
+
+      expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing both listeners and dispatching customEvent_1 event');
+
+      dispatch('customEvent_1', target);
+
+      expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing both listeners and dispatching customEvent_1 event');
+    });
+
     it('should support silly event names', function() {
       var spy = sinon.spy();
 

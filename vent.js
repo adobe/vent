@@ -411,10 +411,13 @@
     }
 
     // Get/create the list for the event type
-    var listenerList = this._listenersByType[eventName] = this._listenersByType[eventName] || [];
+    var listenerList = this._listenersByType[eventName];
+    if (!listenerList) {
+      listenerList = this._listenersByType[eventName] = [];
 
-    // Add the actual listener
-    this.root.addEventListener(eventName, this._executeListeners, true);
+      // Add the actual listener
+      this.root.addEventListener(eventName, this._executeListeners, true);
+    }
 
     // Set the special ID attribute if the selector is scoped
     var listenerIsScoped = isScoped(selector);
