@@ -669,6 +669,74 @@ describe('Vent', function() {
   });
 
   describe('stopPropagation and stopImmediatePropagation behavior', function() {
+    it('should clean up after itself when stopPropagation() used inside of a delegate event', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+
+      var vent = new Vent(node0);
+
+      var seenEvent;
+
+      var spy_bubble_vent_node1 = sinon.spy();
+      vent.on('customEvent', '#node1', function(event) {
+        spy_bubble_vent_node1();
+
+        // Stop propagation should setup Vent-specific items on the event object
+        event.stopPropagation();
+
+        // Keep a reference to the event
+        seenEvent = event;
+      }, false);
+
+      dispatch('customEvent', node2);
+
+      expect(spy_bubble_vent_node1.callCount).to.equal(1, 'spy_bubble_vent_node1 call count after event dispatched');
+
+      expect(seenEvent.stopPropagation).to.equal(Event.prototype.stopPropagation);
+      expect(seenEvent.stopImmediatePropagation).to.equal(Event.prototype.stopImmediatePropagation);
+      expect(seenEvent._ventRoot).to.equal(null);
+      expect(seenEvent._ventStopPropListeners).to.equal(null);
+    });
+
+    it('should clean up after itself when stopPropagation() used inside of a delegate event and stopPropagation() called in native listener', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+
+      // Add the listener first in the capture phase
+      // This will call stopImmediatePropagation(), which should cause weirdness in Vent if it doesn't get to clean up
+      // This will make it possible for Vent's stopProp listener to not fire
+      node1.addEventListener('customEvent', function(event) {
+        event.stopImmediatePropagation();
+      }, true);
+
+      var vent = new Vent(node0);
+
+      var seenEvent;
+
+      var spy_bubble_vent_node1 = sinon.spy();
+      vent.on('customEvent', '#node2', function(event) {
+        spy_bubble_vent_node1();
+
+        // Stop propagation should setup Vent-specific items on the event object
+        event.stopPropagation();
+
+        // Keep a reference to the event
+        seenEvent = event;
+      }, false);
+
+      dispatch('customEvent', node2);
+
+      expect(spy_bubble_vent_node1.callCount).to.equal(1, 'spy_bubble_vent_node1 call count after event dispatched');
+
+      expect(seenEvent.stopPropagation).to.equal(Event.prototype.stopPropagation);
+      expect(seenEvent.stopImmediatePropagation).to.equal(Event.prototype.stopImmediatePropagation);
+      expect(seenEvent._ventRoot).to.equal(null);
+      expect(seenEvent._ventStopPropListeners).to.equal(null);
+    });
 
     // This is impossible as the native listeners have not executed by the time we have executed our bubble phase listeners
     // @todo document this
@@ -1118,7 +1186,7 @@ describe('Vent', function() {
       expect(spy_bubble_vent_node0.calledBefore(spy_bubble_vent_node0_2)).to.equal(true, 'spy_bubble_vent_node0 called before spy_bubble_vent_node0_2');
     });
 
-    it('should have correct behavior for stopPropagation() for listeners added in the bubble phase', function() {
+    it('should have correct behavior for stopPropagation() for listeners added in the capture phase', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');

@@ -29,37 +29,45 @@
     return selector && scopedSelectorRegex.test(selector);
   }
 
-  // Vent always listens to events in the capture phase so we can explicitly control behavior
-  // In order for stopPropagation and stopImmediatePropagation to correctly stop handlers from being called, we have to get tricky
-  // If a Vent listener calls stopPropagation, we need to simulate this so that listeners added natively are not called as expected
-  // To achieve this, we'll add an event listener that will call stopPropagation on the real event in the correct phase
-  // The following functions will be used as the handlers and will detach themselves automatically
-
-  function _stopPropagationInBubblePhase(event) {
+  // The following functions will be used as handlers and will detach themselves automatically
+  function _stopPropagation(event) {
     Event.prototype.stopPropagation.call(event);
-    this.removeEventListener(event.type, _stopPropagationInBubblePhase, false);
+    _removeVentStopPropagationListeners(event);
   }
 
-  function _stopPropagationInCapturePhase(event) {
-    Event.prototype.stopPropagation.call(event);
-    this.removeEventListener(event.type, _stopPropagationInCapturePhase, true);
-  }
-
-  // An unfortunate caveat that results from attaching a listener during dispatch:
-  // We're definitely going to be the last listener added to the element in almost all cases
-  // As such, we cannot actually stop the immediate propagation to native listeners because they are added before us
-  // Since we've overridden the event's stopImmediatePropagation method, we can be sure that our listener will always be called
-  // If we had not, it would be possible for a native event to stopImmediatePropagation such that our listener stick around,
-  // which would cause unexpected behavior for subsequent events
-
-  function _stopImmediatePropagationInBubblePhase(event) {
+  function _stopImmediatePropagation(event) {
     Event.prototype.stopImmediatePropagation.call(event);
-    this.removeEventListener(event.type, _stopImmediatePropagationInBubblePhase, false);
+    _removeVentStopPropagationListeners(event);
   }
 
-  function _stopImmediatePropagationInCapturePhase(event) {
-    Event.prototype.stopImmediatePropagation.call(event);
-    this.removeEventListener(event.type, _stopImmediatePropagationInCapturePhase, true);
+  // The following functions will be used when overriding event's stopProp methods
+  function ventStopPropagation() {
+    _stopPropagation(this);
+  }
+
+  function ventStopImmediatePropagation() {
+    _stopImmediatePropagation(this);
+  }
+
+  // This method is used to clean up after Vent when stopPropagation has been called in a Vent listener
+  function _removeVentStopPropagationListeners(event) {
+    if (event._ventStopPropListeners) {
+      // Remove all listeners we added on any element
+      // It is possible that another Vent instance may have added more stopProp listeners, hence the array
+      var listener;
+      for (var i = 0; i < event._ventStopPropListeners.length; i++) {
+        listener = event._ventStopPropListeners[i];
+        listener.element.removeEventListener(event.type, listener.handler, listener.useCapture);
+      }
+
+      // Drop references
+      event._ventStopPropListeners = null;
+    }
+
+    // Restore previous method since this event is done for
+    event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
+    event.stopPropagation = Event.prototype.stopPropagation;
+    event._ventRoot = null;
   }
 
   /**
@@ -184,6 +192,34 @@
   };
 
   /**
+    Add an event listener so we can stop the propagation of the actual event during the desired phase.
+
+    Vent always listens to events in the capture phase so we can explicitly control behavior
+    In order for stopPropagation and stopImmediatePropagation to correctly stop handlers from being called, we have to get tricky
+    If a Vent listener calls stopPropagation, we need to simulate this so that listeners added natively are not called as expected
+    To achieve this, we'll add an event listener that will call stopPropagation on the real event in the correct phase
+    We'll also need to clean these listeners up if stopPropagation is called
+
+    @private
+  */
+  Vent.prototype._addStopPropagationListener = function(event, element, handler, useCapture) {
+    // Add a listener to stop propagation
+    element.addEventListener(event.type, handler, useCapture);
+
+    // Store references to added listeners so we can remove them
+    // If stopPropagation is called, we'll blow all of these listeners away
+    event._ventStopPropListeners = event._ventStopPropListeners || [];
+    event._ventStopPropListeners.push({
+      element: element,
+      useCapture: useCapture,
+      handler: handler
+    });
+
+    // Store a reference so we can remove our final listener
+    event._ventRoot = this.el;
+  };
+
+  /**
     Handles all events added with Vent
 
     @private
@@ -257,10 +293,10 @@
         event._ventPropagationStopped
       ) {
         // Use the appropriate listener
-        stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInCapturePhase : _stopPropagationInCapturePhase;
+        stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagation : _stopPropagation;
 
         // Stop propagation once the actual event reaches the node in question
-        currentTargetElement.addEventListener(event.type, stopPropagationListener, true);
+        this._addStopPropagationListener(event, currentTargetElement, stopPropagationListener, true);
       }
       else if (listeners.length) {
         // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
@@ -287,15 +323,28 @@
           event._ventPropagationStopped
         ) {
           // Use the appropriate listener
-          stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagationInBubblePhase : _stopPropagationInBubblePhase;
+          stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagation : _stopPropagation;
 
           // Stop propagation once the actual event reaches the node in question
-          currentTargetElement.addEventListener(event.type, stopPropagationListener, false);
+          this._addStopPropagationListener(event, currentTargetElement, stopPropagationListener, false);
         }
       }
+    }
 
-      // Restore the previous preventDefault methods
-      // This allows native event listeners to correctly stop propagation once the event is inside of Vent's root
+    if (
+      event._ventImmediatePropagationStopped ||
+      event._ventPropagationStopped
+    ) {
+      // We will have added a listener that will stop propagation of the actual event,
+      // which may or may not be called if a native listener calls stopPropagation
+      // To make sure we clean up, we'll override the stopProp methods so we can clean up after ourselves
+      // If this wasn't done, it would be possible for a native event to stopImmediatePropagation such that our stopProp listener sticks around,
+      // which would cause unexpected behavior for subsequent events
+      event.stopPropagation = ventStopPropagation;
+      event.stopImmediatePropagation = ventStopImmediatePropagation;
+    }
+    else {
+      // Otherwise, restore the normal stopPropagation listeners as there is nothing to clean up
       event.stopPropagation = Event.prototype.stopPropagation;
       event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
     }

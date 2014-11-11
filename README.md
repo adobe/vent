@@ -335,6 +335,12 @@ Because Vent's listeners run before those added natively with `addEventListener`
 
 While Vent is simulating the bubble and capture phases, it checks if any handler along the way called `stopPropagation`. If it does, Vent will add a native DOM listener to the delegated element that stops propagation at the correct time during the actual capture and bubbling phases of the event.
 
+#### When a Vent listener calls `stopImmedatePropagation`, it does not reliably stop native listeners
+
+Due to the technique described above, Vent cannot reliably `stopImmediatePropagation` to native listeners added to elements that are descendants of the root.
+
+However, you can simulate `stopImmediatePropagation` by calling `stopPropagation` when the event reaches a different element. For bubble phase listeners, call `stopPropagation` when the event reaches the element directly beneath the one you want to `stopImmediatePropagation` on. For capture phase listeners, call `stopPropagation` on the parent element of the element you want to call `stopImmediatePropagation` on.
+
 
 ## Browser support
 
