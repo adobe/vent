@@ -116,7 +116,8 @@
       root = elementOrSelector;
     }
 
-    // Store element
+    // Store a reference to the root element
+    // This is the node at which we'll listen to events
     this.root = root;
 
     // Map of event names to array of events
