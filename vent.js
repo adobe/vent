@@ -300,6 +300,17 @@
         event._ventImmediatePropagationStopped = true;
       };
 
+      /*
+        Figure out if the bubble phase should be simulated
+
+        Both focus and blur do not bubble:
+          https://developer.mozilla.org/en-US/docs/Web/Events/focus
+          https://developer.mozilla.org/en-US/docs/Web/Events/blur
+
+        However, focusin, focusout, change, and other events do.
+      */
+      var shouldBubble = event.type !== 'focus' && event.type !== 'blur';
+
       // Build an array of the DOM tree between the root and the element that dispatched the event
       // The HTML specification states that, if the tree is modified during dispatch, the event should bubble as it was before
       // Building this list before we dispatch allows us to simulate that behavior
@@ -360,6 +371,11 @@
             event._ventImmediatePropagationStopped ||
             event._ventPropagationStopped
           ) {
+            break bubbleUp;
+          }
+
+          // If the event shouldn't bubble, only simulate it on the target
+          if (!shouldBubble) {
             break bubbleUp;
           }
         }

@@ -2028,4 +2028,69 @@ describe('Vent', function() {
     });
 
   });
+
+  describe('focus and blur events', function() {
+    it('should not bubble focus events', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+
+      var vent = new Vent(node0);
+
+      var spy_node0 = sinon.spy();
+      vent.on('focus', spy_node0);
+
+      var spy_node1 = sinon.spy();
+      vent.on('focus', '#node1', spy_node1);
+
+      var spy_node2 = sinon.spy();
+      vent.on('focus', '#node2', spy_node2);
+
+      dispatch('focus', node2);
+
+      expect(spy_node0.callCount).to.equal(0, 'spy_node0 call count after focus');
+      expect(spy_node1.callCount).to.equal(0, 'spy_node1 call count after focus');
+      expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after focus');
+    });
+
+    it('should not bubble blur events', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+
+      var vent = new Vent(node0);
+
+      var spy_node0 = sinon.spy();
+      vent.on('blur', spy_node0);
+
+      var spy_node1 = sinon.spy();
+      vent.on('blur', '#node1', spy_node1);
+
+      var spy_node2 = sinon.spy();
+      vent.on('blur', '#node2', spy_node2);
+
+      dispatch('blur', node2);
+
+      expect(spy_node0.callCount).to.equal(0, 'spy_node0 call count after blur');
+      expect(spy_node1.callCount).to.equal(0, 'spy_node1 call count after blur');
+      expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after blur');
+    });
+
+    it('should support listening to focus directly on the root element', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+
+      var vent = new Vent(node0);
+
+      var spy_node0 = sinon.spy();
+      vent.on('focus', spy_node0);
+
+      dispatch('focus', node0);
+
+      expect(spy_node0.callCount).to.equal(1, 'spy_node0 call count after blur');
+    });
+  });
+
 });
