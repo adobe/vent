@@ -32,45 +32,24 @@
     return selector && scopedSelectorRegex.test(selector);
   }
 
-  // The following functions will be used as handlers and will detach themselves automatically
-  function _stopPropagation(event) {
-    Event.prototype.stopPropagation.call(event);
-    _removeVentStopPropagationListeners(event);
-  }
+  /**
+    Replaces the stopPropagation() method of an event object
 
-  function _stopImmediatePropagation(event) {
-    Event.prototype.stopImmediatePropagation.call(event);
-    _removeVentStopPropagationListeners(event);
-  }
-
-  // The following functions will be used when overriding event's stopProp methods
+    @ignore
+  */
   function ventStopPropagation() {
-    _stopPropagation(this);
+    this._ventPropagationStopped = true;
+    Event.prototype.stopPropagation.call(this);
   }
 
+  /**
+    Replaces the stopImmediatePropagation() method of an event object
+
+    @ignore
+  */
   function ventStopImmediatePropagation() {
-    _stopImmediatePropagation(this);
-  }
-
-  // This method is used to clean up after Vent when stopPropagation has been called in a Vent listener
-  function _removeVentStopPropagationListeners(event) {
-    if (event._ventStopPropListeners) {
-      // Remove all listeners we added on any element
-      // It is possible that another Vent instance may have added more stopProp listeners, hence the array
-      var listener;
-      for (var i = 0; i < event._ventStopPropListeners.length; i++) {
-        listener = event._ventStopPropListeners[i];
-        listener.element.removeEventListener(event.type, listener.handler, listener.useCapture);
-      }
-
-      // Drop references
-      event._ventStopPropListeners = null;
-    }
-
-    // Restore previous method since this event is done for
-    event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
-    event.stopPropagation = Event.prototype.stopPropagation;
-    event._ventRoot = null;
+    this._ventImmediatePropagationStopped = true;
+    Event.prototype.stopImmediatePropagation.call(this);
   }
 
   /**
@@ -138,8 +117,9 @@
     */
     this._allListeners = [];
 
-    // Ensure _executeListeners always executes in the scope of this instance
-    this._executeListeners = this._executeListeners.bind(this);
+    // Ensure listeners always execute in the scope of this instance
+    this._executeCaptureListeners = this._executeCaptureListeners.bind(this);
+    this._executeBubbleListeners = this._executeBubbleListeners.bind(this);
   }
 
   /**
@@ -232,47 +212,12 @@
   };
 
   /**
-    Add an event listener so we can stop the propagation of the actual event during the desired phase.
-
-    Vent always listens to events at the root element in the capture phase so we can be sure to get the event in case a native listener calls stopPropagation.
-    Users may want to stopPropagation in a delegate listener somewhere further down the DOM, or potentially on the way back up in the bubble phase.
-    In these cases, Vent can't simply call stopPropagation on the actual event, otherwise the event would not continue to correctly propagate.
-
-    Instead, when a delegate listener calls stopPropagation, we need to wait until the event actually propagates to the element of interest before stopping propagation.
-    To achieve this, we'll add an event listener to the element the simulated event propagation was at when the user called stopPropagation
-    that will call stopPropagation as the event propagates.
-
-    This will make it so the propagation of the event is stopped at the element and in the phase the user asked for it to be instead of at the root in the capture phase.
-    This enables Vent delegate listeners to stop propagation to native listeners, but does not make it so native listeners can stop propagation to Vent listeners.
-
-    We'll store the list of listeners so we can remove them in case the event never propagates to their element.
-
-    @private
-  */
-  Vent.prototype._addStopPropagationListener = function(event, element, handler, useCapture) {
-    // Add a listener to stop propagation
-    element.addEventListener(event.type, handler, useCapture);
-
-    // Store references to added listeners so we can remove them
-    // If stopPropagation is called, we'll blow all of these listeners away
-    event._ventStopPropListeners = event._ventStopPropListeners || [];
-    event._ventStopPropListeners.push({
-      element: element,
-      useCapture: useCapture,
-      handler: handler
-    });
-
-    // Store a reference so we can remove our final listener
-    event._ventRoot = this.root;
-  };
-
-  /**
     Handles all events added with Vent
 
     @private
     @memberof Vent
   */
-  Vent.prototype._executeListeners = function(event) {
+  Vent.prototype._executeCaptureListeners = function(event) {
     var listeners = this._listenersByType[event.type];
 
     if (!listeners) {
@@ -284,21 +229,62 @@
       // Without this, removing an event inside of a callback will cause errors
       listeners = listeners.slice();
 
-      // Store a reference to the target
-      // If the event was fired on a text node, delegation should assume the target is its parent
-      var target = event.target;
-      if (target.nodeType === Node.TEXT_NODE) {
-        target = target.parentNode;
+      // Decorate the event object so we know when stopPropagation is called
+      this._decorateEvent(event);
+
+      // Get the event's path through the DOM
+      var eventPath = this._getPath(event);
+
+      // Store for the bubble phase
+      // We'll re-use this again in the bubble phase
+      this._currentEventPath = eventPath;
+
+      // Simulate the capture phase by trickling down the target list
+      trickleDown: for (var eventPathIndex = eventPath.length - 1; eventPathIndex >= 0; eventPathIndex--) {
+        if (!listeners.length) {
+          // Stop trickling down if there are no more listeners to execute
+          break trickleDown;
+        }
+
+        var currentTargetElement = eventPath[eventPathIndex];
+        this._executeListenersAtElement(currentTargetElement, listeners, event, true);
+
+        // Stop if a handler told us to stop trickling down the DOM
+        if (
+          event._ventImmediatePropagationStopped ||
+          event._ventPropagationStopped
+        ) {
+          // Stop simulating trickle down
+          break trickleDown;
+        }
       }
+    }
 
-      // Override stopPropagation/stopImmediatePropagation so we know if we should stop processing events
-      event.stopPropagation = function() {
-        event._ventPropagationStopped = true;
-      };
+    // Clean up after Vent
+    // We'll be re-decorating the event object in the bubble phase, if the event gets there
+    this._undecorateEvent(event);
+  };
 
-      event.stopImmediatePropagation = function() {
-        event._ventImmediatePropagationStopped = true;
-      };
+  /**
+    Handles all events added with Vent
+
+    @private
+    @memberof Vent
+  */
+  Vent.prototype._executeBubbleListeners = function(event) {
+    var listeners = this._listenersByType[event.type];
+
+    if (!listeners) {
+      throw new Error('Vent: _executeListeners called in response to '+event.type+', but we are not listening to it');
+    }
+
+    if (listeners.length) {
+      // Get a copy of the listeners
+      // Without this, removing an event inside of a callback will cause errors
+      listeners = listeners.slice();
+
+      // Decorate the event object so we know when stopPropagation is called
+      this._decorateEvent(event);
 
       /*
         Figure out if the bubble phase should be simulated
@@ -311,106 +297,79 @@
       */
       var shouldBubble = event.type !== 'focus' && event.type !== 'blur';
 
-      // Build an array of the DOM tree between the root and the element that dispatched the event
-      // The HTML specification states that, if the tree is modified during dispatch, the event should bubble as it was before
-      // Building this list before we dispatch allows us to simulate that behavior
-      var tempTarget = target;
-      var targetList = [];
-      buildTree: while (tempTarget && tempTarget !== this.root) {
-        targetList.push(tempTarget);
-        tempTarget = tempTarget.parentNode;
-      }
-      targetList.push(this.root);
+      // Re-use the event path as calculated during the capture phase
+      var eventPath = this._currentEventPath;
 
-      var targetListIndex;
-      var currentTargetElement;
-      var stopPropagationListener;
-
-      // Simulate the capture phase by trickling down the target list
-      trickleDown: for (targetListIndex = targetList.length - 1; targetListIndex >= 0; targetListIndex--) {
+      // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
+      bubbleUp: for (var eventPathIndex = 0; eventPathIndex < eventPath.length; eventPathIndex++) {
         if (!listeners.length) {
-          // Stop trickling down if there are no more listeners to execute
-          break trickleDown;
+          // Stop bubbling up if there are no more listeners to execute
+          break bubbleUp;
         }
-        currentTargetElement = targetList[targetListIndex];
-        this._executeListenersAtElement(currentTargetElement, listeners, event, true);
 
-        // Stop if a handler told us to stop trickling down the DOM
+        var currentTargetElement = eventPath[eventPathIndex];
+        this._executeListenersAtElement(currentTargetElement, listeners, event, false);
+
+        // Stop simulating the bubble phase if a handler told us to
         if (
           event._ventImmediatePropagationStopped ||
           event._ventPropagationStopped
         ) {
-          // Stop simulating trickle down
-          break trickleDown;
-        }
-      }
-
-      // Stop if a handler told us to stop trickling down the DOM
-      if (
-        event._ventImmediatePropagationStopped ||
-        event._ventPropagationStopped
-      ) {
-        // Use the appropriate listener
-        stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagation : _stopPropagation;
-
-        // Stop propagation once the actual event reaches the node in question
-        this._addStopPropagationListener(event, currentTargetElement, stopPropagationListener, true);
-      }
-      else if (listeners.length) {
-        // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
-        bubbleUp: for (targetListIndex = 0; targetListIndex < targetList.length; targetListIndex++) {
-          if (!listeners.length) {
-            // Stop bubbling up if there are no more listeners to execute
-            break bubbleUp;
-          }
-          currentTargetElement = targetList[targetListIndex];
-          this._executeListenersAtElement(currentTargetElement, listeners, event, false);
-
-          // Stop simulating the bubble phase if a handler told us to
-          if (
-            event._ventImmediatePropagationStopped ||
-            event._ventPropagationStopped
-          ) {
-            break bubbleUp;
-          }
-
-          // If the event shouldn't bubble, only simulate it on the target
-          if (!shouldBubble) {
-            break bubbleUp;
-          }
+          break bubbleUp;
         }
 
-        // Stop if a handler told us to stop bubbling up the DOM
-        if (
-          event._ventImmediatePropagationStopped ||
-          event._ventPropagationStopped
-        ) {
-          // Use the appropriate listener
-          stopPropagationListener = event._ventImmediatePropagationStopped ? _stopImmediatePropagation : _stopPropagation;
-
-          // Stop propagation once the actual event reaches the node in question
-          this._addStopPropagationListener(event, currentTargetElement, stopPropagationListener, false);
+        // If the event shouldn't bubble, only simulate it on the target
+        if (!shouldBubble) {
+          break bubbleUp;
         }
       }
     }
 
-    if (
-      event._ventImmediatePropagationStopped ||
-      event._ventPropagationStopped
-    ) {
-      // We will have added a listener that will stop propagation of the actual event,
-      // which may or may not be called if a native listener calls stopPropagation
-      // To make sure we clean up, we'll override the stopProp methods so we can clean up after ourselves
-      // If this wasn't done, it would be possible for a native event to stopImmediatePropagation such that our stopProp listener sticks around,
-      // which would cause unexpected behavior for subsequent events
-      event.stopPropagation = ventStopPropagation;
-      event.stopImmediatePropagation = ventStopImmediatePropagation;
+    // Clean up after Vent
+    this._undecorateEvent(event);
+
+    // Remove the cached path to avoid keeping references around
+    this._currentEventPath = null;
+  };
+
+  /**
+    Override stopPropagation/stopImmediatePropagation so we know if we should stop processing events
+  */
+  Vent.prototype._decorateEvent = function(event) {
+    event.stopPropagation = ventStopPropagation;
+    event.stopImmediatePropagation = ventStopImmediatePropagation;
+  };
+
+  /**
+    Restore the normal stopPropagation methods
+  */
+  Vent.prototype._undecorateEvent = function(event) {
+    event.stopPropagation = Event.prototype.stopPropagation;
+    event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
+  };
+
+  /**
+    Restore the normal stopPropagation methods
+  */
+  Vent.prototype._getPath = function(event) {
+    // If the event was fired on a text node, delegation should assume the target is its parent
+    var target = event.target;
+    if (target.nodeType === Node.TEXT_NODE) {
+      target = target.parentNode;
     }
-    else {
-      // Otherwise, restore the normal stopPropagation listeners as there is nothing to clean up
-      event.stopPropagation = Event.prototype.stopPropagation;
-      event.stopImmediatePropagation = Event.prototype.stopImmediatePropagation;
+
+    // Build an array of the DOM tree between the root and the element that dispatched the event
+    // The HTML specification states that, if the tree is modified during dispatch, the event should bubble as it was before
+    // Building this list before we dispatch allows us to simulate that behavior
+    var pathEl = target;
+    var eventPath = [];
+    buildPath: while (pathEl && pathEl !== this.root) {
+      eventPath.push(pathEl);
+      pathEl = pathEl.parentNode;
     }
+    eventPath.push(this.root);
+
+    return eventPath;
   };
 
   /**
@@ -464,7 +423,8 @@
       listenerList = this._listenersByType[eventName] = [];
 
       // Add the actual listener
-      this.root.addEventListener(eventName, this._executeListeners, true);
+      this.root.addEventListener(eventName, this._executeCaptureListeners, true);
+      this.root.addEventListener(eventName, this._executeBubbleListeners, false);
     }
 
     // Set the special ID attribute if the selector is scoped
@@ -587,7 +547,8 @@
           // Check if we've removed all the listeners for this event type
           if (mapList.length === 0) {
             // Remove the actual listener, if necessary
-            this.root.removeEventListener(listener.eventName, this._executeListeners, true);
+            this.root.removeEventListener(listener.eventName, this._executeCaptureListeners, true);
+            this.root.removeEventListener(listener.eventName, this._executeBubbleListeners, false);
 
             // Avoid using delete operator for performance
             this._listenersByType[listener.eventName] = null;
@@ -691,6 +652,7 @@
     // Remove all references
     this._listenersByType = null;
     this._allListeners = null;
+    this._currentEventPath = null;
     this.root = null;
   };
 

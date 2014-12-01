@@ -364,36 +364,33 @@ describe('Vent', function() {
 
   describe('propagation', function() {
 
-    it('should stop prevent default and stop propagation, but not stop immediate propagation if one returns false', function() {
-      var spy_inner = sinon.spy();
-      var spy_outer = sinon.spy();
-      var spy_nativeSameAsVent = sinon.spy();
-      var spy_nativeDirectlyOnDispatcher = sinon.spy();
+    it('should prevent default and stop propagation, but not stop immediate propagation if a listener returns false', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
 
-      target.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
-      var inner = target.querySelector('.inner');
+      var vent = new Vent(node0);
 
-      vent.on('customEvent', '.inner', function() {
-        spy_inner();
+      var spy_preventDefault;
+      var spy_stopPropagation;
+      var spy_stopImmediatePropagation;
+
+      vent.on('customEvent', '#node1', function(event) {
+        spy_preventDefault = sinon.spy(event, 'preventDefault');
+        spy_stopPropagation = sinon.spy(event, 'stopPropagation');
+        spy_stopImmediatePropagation = sinon.spy(event, 'stopImmediatePropagation');
+
+        // This should cause both preventDefault and stopPropagation, but not immediate
         return false;
       });
 
-      vent.on('customEvent', '.outer', spy_outer);
+      dispatch('customEvent', node2);
 
-      // This listener is added at the same level as the Vent instance's event listener
-      // This listener SHOULD NOT execute as we intended to stop propagation on an element lower in the DOM
-      target.addEventListener('customEvent', spy_nativeSameAsVent);
-
-      // This listener is added at the level the event was dispatched from
-      // This listener SHOULD execute as we did not intend to stop immediate propagation
-      inner.addEventListener('customEvent', spy_nativeDirectlyOnDispatcher);
-
-      dispatch('customEvent', inner);
-
-      expect(spy_inner.callCount).to.equal(1, 'spy_inner call count after event dispatched');
-      expect(spy_outer.callCount).to.equal(0, 'spy_outer call count after event dispatched and handler returned false');
-      expect(spy_nativeSameAsVent.callCount).to.equal(0, 'spy_nativeSameAsVent call count after event dispatched and handler returned false');
-      expect(spy_nativeDirectlyOnDispatcher.callCount).to.equal(1, 'spy_nativeDirectlyOnDispatcher call count after event dispatched and handler returned false');
+      // Make sure methods were called as expected
+      expect(spy_preventDefault.callCount).to.equal(1, 'spy_preventDefault call count after return false');
+      expect(spy_stopPropagation.callCount).to.equal(1, 'spy_stopPropagation call count after return false');
+      expect(spy_stopImmediatePropagation.callCount).to.equal(0, 'spy_stopImmediatePropagation call count after return false');
     });
 
     it('should call handlers when child elements trigger events', function() {
@@ -422,325 +419,168 @@ describe('Vent', function() {
       expect(spy_3.calledBefore(spy_outer)).to.equal(true, 'spy_3 called before spy_outer');
     });
 
-    it('should not call other listeners or propagate if stopImmediatePropagation() called', function() {
-      console.log('stopImmediatePropagation() test');
-      var spy_ventInner = sinon.spy();
-      var spy_ventInBetween = sinon.spy();
-      var spy_ventRoot = sinon.spy();
-      var spy_nativeSameAsVent = sinon.spy();
-      var spy_nativeAbove = sinon.spy();
-      var spy_nativeInBetween = sinon.spy();
-      var spy_nativeDirectlyOnDispatcher = sinon.spy();
+    it('should bubble along the correct path if the DOM is modified during event handling', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+      var node3 = target.querySelector('#node3');
 
-      /*
-        |-----------------------------------------------------------------|
-        |    .outerContainer                                              |
-        |    spy_nativeAbove()                                            |
-        |                                                                 |
-        |   |---------------------------------------------------------|   |
-        |   | .innerContainer                                         |   |
-        |   |   Vent#_executeListeners()                              |   |
-        |   |   spy_nativeSameAsVent()                                |   |
-        |   |   spy_ventRoot()                                        |   |
-        |   |                                                         |   |
-        |   |   |-------------------------------------------------|   |   |
-        |   |   |  .outer                                         |   |   |
-        |   |   |    spy_nativeInBetween()                        |   |   |
-        |   |   |    spy_ventInBetween()                          |   |   |
-        |   |   |                                                 |   |   |
-        |   |   |   -------------------------------------------   |   |   |
-        |   |   |   |  .inner                                 |   |   |   |
-        |   |   |   |    spy_nativeDirectlyOnDispatcher()     |   |   |   |
-        |   |   |   |    spy_ventInner()                      |   |   |   |
-        |   |   |   |                                         |   |   |   |
-        |   |   |   -------------------------------------------   |   |   |
-        |   |   |                                                 |   |   |
-        |   |   |-------------------------------------------------|   |   |
-        |   |                                                         |   |
-        |   |---------------------------------------------------------|   |
-        |                                                                 |
-        |-----------------------------------------------------------------|
-      */
+      var vent = new Vent(node0);
 
-      // Consider the outerContainer to be the target
-      var outerContainer = target;
-      outerContainer.className = 'outerContainer';
-
-      // Create an inner container that we'll attach Vent to
-      var innerContainer = document.createElement('div');
-      innerContainer.className = 'innerContainer';
-      outerContainer.appendChild(innerContainer);
-
-      var vent = new Vent(innerContainer); // just be be explicit: we're listening on target
-
-      // Added on the root
+      // Capture phase listeners
+      var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_ventRoot');
-        spy_ventRoot();
-      });
+        console.log('spy_capture_vent_node0');
+        spy_capture_vent_node0();
+      }, true);
 
-      innerContainer.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
-      var inner = innerContainer.querySelector('.inner');
-
-      vent.on('customEvent', '.inner', function(event) {
-        console.log('spy_ventInner + stopImmedatePropagation');
-        event.stopImmediatePropagation();
-        spy_ventInner();
-      });
-
-      vent.on('customEvent', '.outer', spy_ventInBetween);
-
-      // This listener is added at one level above the Vent instance's event listener
-      outerContainer.addEventListener('customEvent', function() {
-        console.log('spy_nativeAbove');
-        spy_nativeAbove();
-      }, false);
-
-      // This listener is added at the same level as the Vent instance's event listener
-      innerContainer.addEventListener('customEvent', function() {
-        console.log('spy_nativeSameAsVent');
-        spy_nativeSameAsVent();
-      }, false);
-
-      // Listeners added here WILL run because we add a listener later to stopImmediatePropagation()
-      // @todo: document this
-      // This listener is added inbetween the element that dispatches the event and the element that the Vent instance's event listener is on
-      // outer.addEventListener('customEvent', function() {
-      //   console.log('spy_nativeInBetween');
-      //   spy_nativeInBetween();
-      // }, false);
-
-      // This listener is added on the actual element that dispatches the event after the Vent instance's
-      inner.addEventListener('customEvent', function() {
-        // This should NOT run
-        console.log('spy_nativeDirectlyOnDispatcher');
-        spy_nativeDirectlyOnDispatcher();
-      }, false);
-
-      dispatch('customEvent', inner);
-
-      // The listener on the element that dispatched this event SHOULD fire
-      expect(spy_ventInner.callCount).to.equal(1, 'spy_ventInner call count after event dispatched');
-
-      // Listeners on the element ABOVE the one that dispatched should NOT get called
-      expect(spy_ventInBetween.callCount).to.equal(0, 'spy_ventInBetween call count after event dispatched and stopImmediatePropagation() called');
-      expect(spy_nativeInBetween.callCount).to.equal(0, 'spy_nativeInBetween');
-
-      // Since this listener was added AFTER vent, stopImmediatePropagation() should make it not run
-      // However, since the listener we add to simulate this happens during dispatch, this is impossible
-      // expect(spy_nativeDirectlyOnDispatcher.callCount).to.equal(0, 'spy_nativeDirectlyOnDispatcher call count after event dispatched and stopImmediatePropagation() called');
-
-      // This listener SHOULD NOT execute if we're simulating stopImmedatePropagation() correctly
-      // The event should not bubble upwards
-      expect(spy_nativeInBetween.callCount).to.equal(0, 'spy_nativeInBetween');
-
-      // This listener SHOULD NOT execute if we're simulating stopImmediatePropagation() correctly
-      // The remaining listeners on the element should not execute
-      expect(spy_nativeSameAsVent.callCount).to.equal(0, 'spy_nativeSameAsVent call count after event dispatched and stopImmediatePropagation() called');
-
-      // This listener SHOULD NOT execute if we're simulating stopImmediatePropagation() correctly
-      // The remaining listeners on the element should not execute
-      expect(spy_ventRoot.callCount).to.equal(0, 'spy_ventRoot call count after event dispatched and stopImmediatePropagation() called');
-
-      // However, the event should not propagate further
-      expect(spy_nativeAbove.callCount).to.equal(0, 'spy_nativeAbove call count after event dispatched and stopImmediatePropagation() called');
-    });
-
-    it('should stop propagating if stopPropagation() called', function() {
-      console.log('stopPropagation() test');
-      var spy_ventInner = sinon.spy();
-      var spy_ventInBetween = sinon.spy();
-      var spy_ventRoot = sinon.spy();
-      var spy_nativeSameAsVent = sinon.spy();
-      var spy_nativeAbove = sinon.spy();
-      var spy_nativeInBetween = sinon.spy();
-      var spy_nativeDirectlyOnDispatcher = sinon.spy();
-
-      /*
-        |-----------------------------------------------------------------|
-        |    .outerContainer                                              |
-        |    spy_nativeAbove()                                            |
-        |                                                                 |
-        |   |---------------------------------------------------------|   |
-        |   | .innerContainer                                         |   |
-        |   |   Vent#_executeListeners()                              |   |
-        |   |   spy_nativeSameAsVent()                                |   |
-        |   |   spy_ventRoot()                                        |   |
-        |   |                                                         |   |
-        |   |   |-------------------------------------------------|   |   |
-        |   |   |  .outer                                         |   |   |
-        |   |   |    spy_nativeInBetween()                        |   |   |
-        |   |   |    spy_ventInBetween()                          |   |   |
-        |   |   |                                                 |   |   |
-        |   |   |   -------------------------------------------   |   |   |
-        |   |   |   |  .inner                                 |   |   |   |
-        |   |   |   |    spy_nativeDirectlyOnDispatcher()     |   |   |   |
-        |   |   |   |    spy_ventInner()                      |   |   |   |
-        |   |   |   |                                         |   |   |   |
-        |   |   |   -------------------------------------------   |   |   |
-        |   |   |                                                 |   |   |
-        |   |   |-------------------------------------------------|   |   |
-        |   |                                                         |   |
-        |   |---------------------------------------------------------|   |
-        |                                                                 |
-        |-----------------------------------------------------------------|
-      */
-
-      // Consider the outerContainer to be the target
-      var outerContainer = target;
-      outerContainer.className = 'outerContainer';
-
-      // Create an inner container that we'll attach Vent to
-      var innerContainer = document.createElement('div');
-      innerContainer.className = 'innerContainer';
-      outerContainer.appendChild(innerContainer);
-
-      var vent = new Vent(innerContainer); // just be be explicit: we're listening on target
-
-      // Added on the root
+      var spy_capture_vent_node0_2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_ventRoot');
-        spy_ventRoot();
-      });
+        console.log('spy_capture_vent_node0_2');
+        spy_capture_vent_node0_2();
+      }, true);
 
-      innerContainer.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
-      var inner = innerContainer.querySelector('.inner');
-      var outer = innerContainer.querySelector('.outer');
+      var spy_capture_vent_node1 = sinon.spy();
+      vent.on('customEvent', '#node1', function() {
+        console.log('spy_capture_vent_node1');
+        spy_capture_vent_node1();
+      }, true);
 
-      vent.on('customEvent', '.inner', function(event) {
-        console.log('spy_ventInner + stopPropagation');
-        event.stopPropagation();
-        spy_ventInner();
-      });
+      var spy_capture_vent_node1_2 = sinon.spy();
+      vent.on('customEvent', '#node1', function() {
+        console.log('spy_capture_vent_node1_2');
+        spy_capture_vent_node1_2();
+      }, true);
 
-      vent.on('customEvent', '.outer', spy_ventInBetween);
+      var spy_capture_vent_node2 = sinon.spy();
+      vent.on('customEvent', '#node2', function() {
+        console.log('spy_capture_vent_node2');
+        spy_capture_vent_node2();
+      }, true);
 
-      // This listener is added at one level above the Vent instance's event listener
-      outerContainer.addEventListener('customEvent', function() {
-        console.log('spy_nativeAbove');
-        spy_nativeAbove();
+      var spy_capture_vent_node2_2 = sinon.spy();
+      vent.on('customEvent', '#node2', function() {
+        console.log('spy_capture_vent_node2_2');
+        spy_capture_vent_node2_2();
+      }, true);
+
+      var spy_capture_vent_node3 = sinon.spy();
+      vent.on('customEvent', '#node3', function() {
+        console.log('spy_capture_vent_node3');
+        spy_capture_vent_node3();
+      }, true);
+
+      var spy_capture_vent_node3_2 = sinon.spy();
+      vent.on('customEvent', '#node3', function() {
+        console.log('spy_capture_vent_node3_2');
+        spy_capture_vent_node3_2();
+
+        // Break the DOM!
+        node2.parentNode.removeChild(node2);
+      }, true);
+
+      // Bubble phase listeners
+      var spy_bubble_vent_node3 = sinon.spy();
+      vent.on('customEvent', '#node3', function() {
+        console.log('spy_bubble_vent_node3');
+        spy_bubble_vent_node3();
       }, false);
 
-      // This listener is added at the same level as the Vent instance's event listener
-      innerContainer.addEventListener('customEvent', function() {
-        console.log('spy_nativeSameAsVent');
-        spy_nativeSameAsVent();
+      var spy_bubble_vent_node3_2 = sinon.spy();
+      vent.on('customEvent', '#node3', function() {
+        console.log('spy_bubble_vent_node3_2');
+        spy_bubble_vent_node3_2();
       }, false);
 
-      // This listener is added inbetween the element that dispatches the event and the element that the Vent instance's event listener is on
-      outer.addEventListener('customEvent', function() {
-        console.log('spy_nativeInBetween');
-        spy_nativeInBetween();
+      var spy_bubble_vent_node2 = sinon.spy();
+      vent.on('customEvent', '#node2', function() {
+        console.log('spy_bubble_vent_node2');
+        spy_bubble_vent_node2();
       }, false);
 
-      // This listener is added until the Ven instance's, on the actaul element that dispatches the event
-      inner.addEventListener('customEvent', function() {
-        console.log('spy_nativeDirectlyOnDispatcher');
-        spy_nativeDirectlyOnDispatcher();
+      var spy_bubble_vent_node2_2 = sinon.spy();
+      vent.on('customEvent', '#node2', function() {
+        console.log('spy_bubble_vent_node2_2');
+        spy_bubble_vent_node2_2();
       }, false);
 
-      dispatch('customEvent', inner);
+      var spy_bubble_vent_node1 = sinon.spy();
+      vent.on('customEvent', '#node1', function() {
+        console.log('spy_bubble_vent_node1');
+        spy_bubble_vent_node1();
+      }, false);
 
-      // The listener on the element that dispatched this event SHOULD fire
-      expect(spy_ventInner.callCount).to.equal(1, 'spy_ventInner call count after event dispatched');
+      var spy_bubble_vent_node1_2 = sinon.spy();
+      vent.on('customEvent', '#node1', function() {
+        console.log('spy_bubble_vent_node1_2');
+        spy_bubble_vent_node1_2();
+      }, false);
 
-      // Listeners on the element ABOVE the one that dispatched should NOT get called
-      expect(spy_ventInBetween.callCount).to.equal(0, 'spy_ventInBetween call count after event dispatched and stopPropagation() called');
-      expect(spy_nativeInBetween.callCount).to.equal(0, 'spy_nativeInBetween');
+      var spy_bubble_vent_node0 = sinon.spy();
+      vent.on('customEvent', function() {
+        console.log('spy_bubble_vent_node0');
+        spy_bubble_vent_node0();
+      }, false);
 
-      // Since we are only stopping upward propagation, not immedate, this listener should run
-      expect(spy_nativeDirectlyOnDispatcher.callCount).to.equal(1, 'spy_nativeDirectlyOnDispatcher call count after event dispatched and stopPropagation() called');
+      var spy_bubble_vent_node0_2 = sinon.spy();
+      vent.on('customEvent', function() {
+        console.log('spy_bubble_vent_node0_2');
+        spy_bubble_vent_node0_2();
+      }, false);
 
-      // This listener SHOULD NOT execute if we're simulating stopPropagation() correctly
-      // The event should not bubble upwards
-      expect(spy_nativeInBetween.callCount).to.equal(0, 'spy_nativeInBetween');
+      // Native bubble listener
+      node3.addEventListener('customEvent', function() {
+        // Break the DOM!
+        node3.parentNode.removeChild(node3);
+      }, false);
 
-      // This listener SHOULD NOT execute if we're simulating stopPropagation() correctly
-      // The remaining listeners on the element should not execute
-      expect(spy_nativeSameAsVent.callCount).to.equal(0, 'spy_nativeSameAsVent call count after event dispatched and stopPropagation() called');
+      dispatch('customEvent', node3);
 
-      // This listener SHOULD NOT execute if we're simulating stopPropagation() correctly
-      // The remaining listeners on the element should not execute
-      expect(spy_ventRoot.callCount).to.equal(0, 'spy_ventRoot call count after event dispatched and stopPropagation() called');
+      // Make sure the capture phase listeners were called
+      expect(spy_capture_vent_node0.callCount).to.equal(1, 'spy_capture_vent_node0 call count after event dispatched');
+      expect(spy_capture_vent_node0_2.callCount).to.equal(1, 'spy_capture_vent_node0_2 call count after event dispatched');
+      expect(spy_capture_vent_node1.callCount).to.equal(1, 'spy_capture_vent_node1 call count after event dispatched');
+      expect(spy_capture_vent_node1_2.callCount).to.equal(1, 'spy_capture_vent_node1_2 call count after event dispatched');
+      expect(spy_capture_vent_node2.callCount).to.equal(1, 'spy_capture_vent_node2 call count after event dispatched');
+      expect(spy_capture_vent_node2_2.callCount).to.equal(1, 'spy_capture_vent_node2_2 call count after event dispatched');
+      expect(spy_capture_vent_node3.callCount).to.equal(1, 'spy_capture_vent_node3 call count after event dispatched');
+      expect(spy_capture_vent_node3_2.callCount).to.equal(1, 'spy_capture_vent_node3_2 call count after event dispatched');
 
-      // However, the event should not propagate further
-      expect(spy_nativeAbove.callCount).to.equal(0, 'spy_nativeAbove call count after event dispatched and stopPropagation() called');
+      expect(spy_bubble_vent_node0.callCount).to.equal(1, 'spy_bubble_vent_node0 call count after event dispatched');
+      expect(spy_bubble_vent_node0_2.callCount).to.equal(1, 'spy_bubble_vent_node0_2 call count after event dispatched');
+      expect(spy_bubble_vent_node1.callCount).to.equal(1, 'spy_bubble_vent_node1 call count after event dispatched');
+      expect(spy_bubble_vent_node1_2.callCount).to.equal(1, 'spy_bubble_vent_node1_2 call count after event dispatched');
+      expect(spy_bubble_vent_node2.callCount).to.equal(1, 'spy_bubble_vent_node2 call count after event dispatched');
+      expect(spy_bubble_vent_node2_2.callCount).to.equal(1, 'spy_bubble_vent_node2_2 call count after event dispatched');
+      expect(spy_bubble_vent_node3.callCount).to.equal(1, 'spy_bubble_vent_node3 call count after event dispatched');
+      expect(spy_bubble_vent_node3_2.callCount).to.equal(1, 'spy_bubble_vent_node3_2 call count after event dispatched');
+
+      // Make sure the capture phase listeners were called in the right order
+      expect(spy_capture_vent_node0.calledBefore(spy_capture_vent_node0_2)).to.equal(true, 'spy_capture_vent_node0 called before spy_capture_vent_node0_2');
+      expect(spy_capture_vent_node0_2.calledBefore(spy_capture_vent_node1)).to.equal(true, 'spy_capture_vent_node0_2 called before spy_capture_vent_node1');
+      expect(spy_capture_vent_node1.calledBefore(spy_capture_vent_node1_2)).to.equal(true, 'spy_capture_vent_node1 called before spy_capture_vent_node1_2');
+      expect(spy_capture_vent_node1_2.calledBefore(spy_capture_vent_node2)).to.equal(true, 'spy_capture_vent_node1_2 called before spy_capture_vent_node2');
+      expect(spy_capture_vent_node2.calledBefore(spy_capture_vent_node2_2)).to.equal(true, 'spy_capture_vent_node2 called before spy_capture_vent_node2_2');
+      expect(spy_capture_vent_node2_2.calledBefore(spy_capture_vent_node3)).to.equal(true, 'spy_capture_vent_node2_2 called before spy_capture_vent_node3');
+      expect(spy_capture_vent_node3.calledBefore(spy_capture_vent_node3_2)).to.equal(true, 'spy_capture_vent_node3 called before spy_capture_vent_node3_2');
+
+      // Make sure capture was called before bubble
+      expect(spy_capture_vent_node3_2.calledBefore(spy_bubble_vent_node3)).to.equal(true, 'spy_capture_vent_node3_2 called before spy_bubble_vent_node3');
+
+      // Make sure the bubble phase listeners were called in the right order
+      expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node3_2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node3_2');
+      expect(spy_bubble_vent_node3_2.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3_2 called before spy_bubble_vent_node2');
+      expect(spy_bubble_vent_node2.calledBefore(spy_bubble_vent_node2_2)).to.equal(true, 'spy_bubble_vent_node2 called before spy_bubble_vent_node2_2');
+      expect(spy_bubble_vent_node2_2.calledBefore(spy_bubble_vent_node1)).to.equal(true, 'spy_bubble_vent_node2_2 called before spy_bubble_vent_node1');
+      expect(spy_bubble_vent_node1.calledBefore(spy_bubble_vent_node1_2)).to.equal(true, 'spy_bubble_vent_node1 called before spy_bubble_vent_node1_2');
+      expect(spy_bubble_vent_node1_2.calledBefore(spy_bubble_vent_node0)).to.equal(true, 'spy_bubble_vent_node1_2 called before spy_bubble_vent_node0');
+      expect(spy_bubble_vent_node0.calledBefore(spy_bubble_vent_node0_2)).to.equal(true, 'spy_bubble_vent_node0 called before spy_bubble_vent_node0_2');
     });
   });
 
   describe('stopPropagation and stopImmediatePropagation behavior', function() {
-    it('should clean up after itself when stopPropagation() used inside of a delegate event', function() {
-      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
-      var node0 = target.querySelector('#node0');
-      var node1 = target.querySelector('#node1');
-      var node2 = target.querySelector('#node2');
-
-      var vent = new Vent(node0);
-
-      var seenEvent;
-
-      var spy_bubble_vent_node1 = sinon.spy();
-      vent.on('customEvent', '#node1', function(event) {
-        spy_bubble_vent_node1();
-
-        // Stop propagation should setup Vent-specific items on the event object
-        event.stopPropagation();
-
-        // Keep a reference to the event
-        seenEvent = event;
-      }, false);
-
-      dispatch('customEvent', node2);
-
-      expect(spy_bubble_vent_node1.callCount).to.equal(1, 'spy_bubble_vent_node1 call count after event dispatched');
-
-      expect(seenEvent.stopPropagation).to.equal(Event.prototype.stopPropagation);
-      expect(seenEvent.stopImmediatePropagation).to.equal(Event.prototype.stopImmediatePropagation);
-      expect(seenEvent._ventRoot).to.equal(null);
-      expect(seenEvent._ventStopPropListeners).to.equal(null);
-    });
-
-    it('should clean up after itself when stopPropagation() used inside of a delegate event and stopPropagation() called in native listener', function() {
-      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
-      var node0 = target.querySelector('#node0');
-      var node1 = target.querySelector('#node1');
-      var node2 = target.querySelector('#node2');
-
-      // Add the listener first in the capture phase
-      // This will call stopImmediatePropagation(), which should cause weirdness in Vent if it doesn't get to clean up
-      // This will make it possible for Vent's stopProp listener to not fire
-      node1.addEventListener('customEvent', function(event) {
-        event.stopImmediatePropagation();
-      }, true);
-
-      var vent = new Vent(node0);
-
-      var seenEvent;
-
-      var spy_bubble_vent_node1 = sinon.spy();
-      vent.on('customEvent', '#node2', function(event) {
-        spy_bubble_vent_node1();
-
-        // Stop propagation should setup Vent-specific items on the event object
-        event.stopPropagation();
-
-        // Keep a reference to the event
-        seenEvent = event;
-      }, false);
-
-      dispatch('customEvent', node2);
-
-      expect(spy_bubble_vent_node1.callCount).to.equal(1, 'spy_bubble_vent_node1 call count after event dispatched');
-
-      expect(seenEvent.stopPropagation).to.equal(Event.prototype.stopPropagation);
-      expect(seenEvent.stopImmediatePropagation).to.equal(Event.prototype.stopImmediatePropagation);
-      expect(seenEvent._ventRoot).to.equal(null);
-      expect(seenEvent._ventStopPropListeners).to.equal(null);
-    });
-
-    // This is impossible as the native listeners have not executed by the time we have executed our bubble phase listeners
-    // @todo document this
-    it.skip('should not execute the bubble phase listeners if a native event listener calls stopPropagation() in the capture phase', function() {
+    it('should not execute the bubble phase listeners if a native event listener calls stopPropagation() in the capture phase', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
@@ -769,9 +609,7 @@ describe('Vent', function() {
       expect(spy_bubble_vent_node2.callCount).to.equal(0, 'spy_bubble_vent_node2 after event dispatched and stopPropagation() called');
     });
 
-    // This is impossible as the native listeners have not executed by the time we have executed our bubble phase listeners
-    // @todo document this
-    it.skip('should not execute the bubble phase listeners if a native event listener calls stopPropagation() in the bubble phase', function() {
+    it('should not execute the bubble phase listeners if a native event listener calls stopPropagation() in the bubble phase', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
@@ -820,7 +658,7 @@ describe('Vent', function() {
 
       var spy_bubble_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
-        // Should NOT be called
+        // Should NOT be called, but unforunately will be
         console.log('spy_bubble_native_node0');
         spy_bubble_native_node0();
       }, false);
@@ -835,7 +673,7 @@ describe('Vent', function() {
 
       var spy_bubble_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
-        // Should NOT be called
+        // Should NOT be called, but unforunately will be
         console.log('spy_bubble_native_node1');
         spy_bubble_native_node1();
       }, false);
@@ -907,9 +745,11 @@ describe('Vent', function() {
 
       // Listeners above the stopPropagation call should NOT be called
       expect(spy_bubble_vent_node0.callCount).to.equal(0, 'spy_bubble_vent_node0 call count after event dispatched');
-      expect(spy_bubble_native_node0.callCount).to.equal(0, 'spy_bubble_native_node0 call count after event dispatched');
       expect(spy_bubble_vent_node1.callCount).to.equal(0, 'spy_bubble_vent_node1 call count after event dispatched');
-      expect(spy_bubble_native_node1.callCount).to.equal(0, 'spy_bubble_native_node1 call count after event dispatched');
+
+      // Native listeners above should NOT be called, but unfortunately will be
+      expect(spy_bubble_native_node1.callCount).to.equal(1, 'spy_bubble_native_node1 call count after event dispatched');
+      expect(spy_bubble_native_node0.callCount).to.equal(1, 'spy_bubble_native_node0 call count after event dispatched');
 
       // Make sure listeners were called in the right order
       expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node2');
@@ -920,6 +760,7 @@ describe('Vent', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
       var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
       var node4 = target.querySelector('#node4');
 
@@ -950,7 +791,7 @@ describe('Vent', function() {
 
       var spy_bubble_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
-        // Should NOT be called
+        // Should NOT be called, but unfortunately will be
         console.log('spy_bubble_native_node1');
         spy_bubble_native_node1();
       }, false);
@@ -969,13 +810,12 @@ describe('Vent', function() {
         spy_bubble_vent_node2_2();
       }, false);
 
-      // var node2 = target.querySelector('#node2');
-      // var spy_bubble_native_node2 = sinon.spy();
-      // node2.addEventListener('customEvent', function() {
-      //   // Should be called
-      //   console.log('spy_bubble_native_node2');
-      //   spy_bubble_native_node2();
-      // }, false);
+      var spy_bubble_native_node2 = sinon.spy();
+      node2.addEventListener('customEvent', function() {
+        // Should NOT be called, but unfortunately will be
+        console.log('spy_bubble_native_node2');
+        spy_bubble_native_node2();
+      }, false);
 
       // Listeners one level above the node that dispatches the event
       var spy_bubble_vent_node3 = sinon.spy();
@@ -1016,9 +856,8 @@ describe('Vent', function() {
       // Listeners at the level of stopImmediatePropagation should NOT be called
       expect(spy_bubble_vent_node2_2.callCount).to.equal(0, 'spy_bubble_vent_node2_2 call count after event dispatched');
 
-      // Unfortunately, this is impossible as the listener that does the stopImmediatePropagation call is added when the event is dispatched
-      // @todo document this
-      // expect(spy_bubble_native_node2.callCount).to.equal(0, 'spy_bubble_native_node2 call count after event dispatched');
+      // Unfortunately, this is impossible as the listener that does the stopImmediatePropagation call is at the root
+      expect(spy_bubble_native_node2.callCount).to.equal(1, 'spy_bubble_native_node2 call count after event dispatched');
 
       // Listeners below the stopImmediatePropagation SHOULD be called
       expect(spy_bubble_vent_node3.callCount).to.equal(1, 'spy_bubble_vent_node3 call count after event dispatched');
@@ -1026,11 +865,15 @@ describe('Vent', function() {
       expect(spy_bubble_vent_node4.callCount).to.equal(1, 'spy_bubble_vent_node4 call count after event dispatched');
       expect(spy_bubble_native_node4.callCount).to.equal(1, 'spy_bubble_native_node4 call count after event dispatched');
 
-      //Listeners above the stopImmediatePropagation call should NOT be called
+      // Vent Listeners above the stopImmediatePropagation call should NOT be called
       expect(spy_bubble_vent_node0.callCount).to.equal(0, 'spy_bubble_vent_node0 call count after event dispatched');
-      expect(spy_bubble_native_node0.callCount).to.equal(0, 'spy_bubble_native_node0 call count after event dispatched');
       expect(spy_bubble_vent_node1.callCount).to.equal(0, 'spy_bubble_vent_node1 call count after event dispatched');
-      expect(spy_bubble_native_node1.callCount).to.equal(0, 'spy_bubble_native_node1 call count after event dispatched');
+
+      // Native listenerse at the same level as Vent will not be called
+      expect(spy_bubble_native_node0.callCount).to.equal(0, 'spy_bubble_native_node0 call count after event dispatched');
+
+      // Native listeners should NOT be called, but unfortunately will still be
+      expect(spy_bubble_native_node1.callCount).to.equal(1, 'spy_bubble_native_node1 call count after event dispatched');
 
       // Make sure listeners were called in the right order
       expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node2');
@@ -1227,7 +1070,7 @@ describe('Vent', function() {
 
       var spy_capture_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
-        // Should be called
+        // Should NOT be called, unfortunarely
         console.log('spy_capture_native_node1');
         spy_capture_native_node1();
       }, true);
@@ -1260,7 +1103,9 @@ describe('Vent', function() {
       expect(spy_capture_native_node0.callCount).to.equal(1, 'spy_capture_native_node0 call count after event dispatched');
       expect(spy_capture_vent_node1.callCount).to.equal(1, 'spy_capture_vent_node1 call count after event dispatched');
       expect(spy_capture_vent_node1_2.callCount).to.equal(1, 'spy_capture_vent_node1_2 call count after event dispatched');
-      expect(spy_capture_native_node1.callCount).to.equal(1, 'spy_capture_native_node1 call count after event dispatched');
+
+      // Native listeners further down will not be called
+      expect(spy_capture_native_node1.callCount).to.equal(0, 'spy_capture_native_node1 call count after event dispatched');
 
       // Since we called stopPropagation(), deeper listeners should NOT have been called
       expect(spy_capture_vent_node2.callCount).to.equal(0, 'spy_capture_vent_node2 call count after event dispatched');
@@ -1278,6 +1123,7 @@ describe('Vent', function() {
     it('should have correct behavior for stopImmediatePropagation() for listeners added in the capture phase', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
@@ -1291,6 +1137,7 @@ describe('Vent', function() {
 
       var spy_capture_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
+        // Should be called, but unfortunately will not be
         console.log('spy_capture_native_node0');
         spy_capture_native_node0();
       }, true);
@@ -1309,15 +1156,12 @@ describe('Vent', function() {
         spy_capture_vent_node1_2();
       }, true);
 
-      // This is impossible
-      // @todo document this
-      // var node1 = target.querySelector('#node1');
-      // var spy_capture_native_node1 = sinon.spy();
-      // node1.addEventListener('customEvent', function(event) {
-      //   // Should NOT be called
-      //   console.log('spy_capture_native_node1');
-      //   spy_capture_native_node1();
-      // }, true);
+      var spy_capture_native_node1 = sinon.spy();
+      node1.addEventListener('customEvent', function() {
+        // Should NOT be called
+        console.log('spy_capture_native_node1');
+        spy_capture_native_node1();
+      }, true);
 
       var spy_capture_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
@@ -1342,14 +1186,16 @@ describe('Vent', function() {
 
       dispatch('customEvent', node3);
 
+      // Unfortunately, we'll be stoppingImmediatePropagation the event at the root, not node1, so this listener will be stopped
+      expect(spy_capture_native_node0.callCount).to.equal(0, 'spy_capture_native_node0 call count after event dispatched');
+
       // Make sure the capture phase listeners were called
-      expect(spy_capture_native_node0.callCount).to.equal(1, 'spy_capture_native_node0 call count after event dispatched');
       expect(spy_capture_vent_node0.callCount).to.equal(1, 'spy_capture_vent_node0 call count after event dispatched');
       expect(spy_capture_vent_node1.callCount).to.equal(1, 'spy_capture_vent_node1 call count after event dispatched');
 
       // Since we called stopImmediatePropagation, listeners at the same level should not have been called
       expect(spy_capture_vent_node1_2.callCount).to.equal(0, 'spy_capture_native_node1_2 call count after event dispatched');
-      // expect(spy_capture_native_node1.callCount).to.equal(0, 'spy_capture_native_node1 call count after event dispatched');
+      expect(spy_capture_native_node1.callCount).to.equal(0, 'spy_capture_native_node1 call count after event dispatched');
 
       // Since we called stopPropagation(), deeper listeners should NOT have been called
       expect(spy_capture_vent_node2.callCount).to.equal(0, 'spy_capture_vent_node2 call count after event dispatched');
@@ -1364,9 +1210,7 @@ describe('Vent', function() {
       expect(spy_capture_vent_node0.calledBefore(spy_capture_vent_node1)).to.equal(true, 'spy_capture_vent_node0 called before spy_capture_vent_node1');
     });
 
-    // This is impossible as we always execute bubble listeners in the capture phase
-    // @todo document this
-    it.skip('should set the correct phase for capture/bubble events', function() {
+    it('should set the correct phase for capture/bubble events', function() {
       var vent = new Vent(target);
       var bubbleSpy = sinon.spy();
       var captureSpy = sinon.spy();
@@ -1781,7 +1625,7 @@ describe('Vent', function() {
       vent.on('customEvent', function(event) {
         expect(this).to.equal(node0);
         expect(event.target).to.equal(node2);
-        spy_node0()
+        spy_node0();
       });
 
       var spy_node1 = sinon.spy();
@@ -1795,7 +1639,7 @@ describe('Vent', function() {
       vent.on('customEvent', '#node2', function(event) {
         expect(this).to.equal(node2);
         expect(event.target).to.equal(node2);
-        spy_node2()
+        spy_node2();
       });
 
       dispatch('customEvent', node2);
