@@ -23,6 +23,16 @@ describe('Vent', function() {
     return event;
   }
 
+  /**
+    Log things if debug mode is on
+  */
+  var debug = false;
+  function log() {
+    if (debug) {
+      console.log.apply(console, arguments);
+    }
+  }
+
   beforeEach(function() {
     target = document.createElement('div');
     target.id = 'target';
@@ -431,49 +441,49 @@ describe('Vent', function() {
       // Capture phase listeners
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_capture_vent_node0');
+        log('spy_capture_vent_node0');
         spy_capture_vent_node0();
       }, true);
 
       var spy_capture_vent_node0_2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_capture_vent_node0_2');
+        log('spy_capture_vent_node0_2');
         spy_capture_vent_node0_2();
       }, true);
 
       var spy_capture_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_capture_vent_node1');
+        log('spy_capture_vent_node1');
         spy_capture_vent_node1();
       }, true);
 
       var spy_capture_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_capture_vent_node1_2');
+        log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       var spy_capture_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_capture_vent_node2');
+        log('spy_capture_vent_node2');
         spy_capture_vent_node2();
       }, true);
 
       var spy_capture_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_capture_vent_node2_2');
+        log('spy_capture_vent_node2_2');
         spy_capture_vent_node2_2();
       }, true);
 
       var spy_capture_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_capture_vent_node3');
+        log('spy_capture_vent_node3');
         spy_capture_vent_node3();
       }, true);
 
       var spy_capture_vent_node3_2 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_capture_vent_node3_2');
+        log('spy_capture_vent_node3_2');
         spy_capture_vent_node3_2();
 
         // Break the DOM!
@@ -483,49 +493,49 @@ describe('Vent', function() {
       // Bubble phase listeners
       var spy_bubble_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_bubble_vent_node3');
+        log('spy_bubble_vent_node3');
         spy_bubble_vent_node3();
       }, false);
 
       var spy_bubble_vent_node3_2 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_bubble_vent_node3_2');
+        log('spy_bubble_vent_node3_2');
         spy_bubble_vent_node3_2();
       }, false);
 
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
       var spy_bubble_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2_2');
+        log('spy_bubble_vent_node2_2');
         spy_bubble_vent_node2_2();
       }, false);
 
       var spy_bubble_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_bubble_vent_node1');
+        log('spy_bubble_vent_node1');
         spy_bubble_vent_node1();
       }, false);
 
       var spy_bubble_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_bubble_vent_node1_2');
+        log('spy_bubble_vent_node1_2');
         spy_bubble_vent_node1_2();
       }, false);
 
       var spy_bubble_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_bubble_vent_node0');
+        log('spy_bubble_vent_node0');
         spy_bubble_vent_node0();
       }, false);
 
       var spy_bubble_vent_node0_2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_bubble_vent_node0_2');
+        log('spy_bubble_vent_node0_2');
         spy_bubble_vent_node0_2();
       }, false);
 
@@ -591,7 +601,7 @@ describe('Vent', function() {
       // A listener in the capture phase UNDER where Vent is listening
       var spy_capture_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function(event) {
-        console.log('spy_capture_native_node1 + stopPropagation');
+        log('spy_capture_native_node1 + stopPropagation');
         spy_capture_native_node1();
         event.stopPropagation();
       }, true);
@@ -599,7 +609,7 @@ describe('Vent', function() {
       // A Vent listener on the root in the bubble phase
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
@@ -620,7 +630,7 @@ describe('Vent', function() {
       // A listener in the capture phase UNDER where Vent is listening
       var spy_capture_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function(event) {
-        console.log('spy_capture_native_node1 + stopPropagation');
+        log('spy_capture_native_node1 + stopPropagation');
         spy_capture_native_node1();
         event.stopPropagation();
       }, false);
@@ -628,7 +638,7 @@ describe('Vent', function() {
       // A Vent listener on the root in the bubble phase
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
@@ -652,14 +662,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node0');
+        log('spy_bubble_vent_node0');
         spy_bubble_vent_node0();
       }, false);
 
       var spy_bubble_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
         // Should NOT be called, but unforunately will be
-        console.log('spy_bubble_native_node0');
+        log('spy_bubble_native_node0');
         spy_bubble_native_node0();
       }, false);
 
@@ -667,35 +677,35 @@ describe('Vent', function() {
       var spy_bubble_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node1');
+        log('spy_bubble_vent_node1');
         spy_bubble_vent_node1();
       }, false);
 
       var spy_bubble_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
         // Should NOT be called, but unforunately will be
-        console.log('spy_bubble_native_node1');
+        log('spy_bubble_native_node1');
         spy_bubble_native_node1();
       }, false);
 
       // Listeners at the level where stopPropagation is called
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function(event) {
-        console.log('spy_bubble_vent_node2 + stopPropagation');
+        log('spy_bubble_vent_node2 + stopPropagation');
         event.stopPropagation();
         spy_bubble_vent_node2();
       }, false);
 
       var spy_bubble_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2_2');
+        log('spy_bubble_vent_node2_2');
         spy_bubble_vent_node2_2();
       }, false);
 
       var spy_bubble_native_node2 = sinon.spy();
       node2.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_bubble_native_node2');
+        log('spy_bubble_native_node2');
         spy_bubble_native_node2();
       }, false);
 
@@ -703,14 +713,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
         // Should be called
-        console.log('spy_bubble_vent_node3');
+        log('spy_bubble_vent_node3');
         spy_bubble_vent_node3();
       }, false);
 
       var spy_bubble_native_node3 = sinon.spy();
       node3.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_bubble_native_node3');
+        log('spy_bubble_native_node3');
         spy_bubble_native_node3();
       }, false);
 
@@ -718,14 +728,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node4 = sinon.spy();
       vent.on('customEvent', '#node4', function() {
         // Should be called
-        console.log('spy_bubble_vent_node4');
+        log('spy_bubble_vent_node4');
         spy_bubble_vent_node4();
       }, false);
 
       var spy_bubble_native_node4 = sinon.spy();
       node4.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_bubble_native_node4');
+        log('spy_bubble_native_node4');
         spy_bubble_native_node4();
       }, false);
 
@@ -770,14 +780,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node0');
+        log('spy_bubble_vent_node0');
         spy_bubble_vent_node0();
       }, false);
 
       var spy_bubble_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
         // Should NOT be called
-        console.log('spy_bubble_native_node0');
+        log('spy_bubble_native_node0');
         spy_bubble_native_node0();
       }, false);
 
@@ -785,35 +795,35 @@ describe('Vent', function() {
       var spy_bubble_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node1');
+        log('spy_bubble_vent_node1');
         spy_bubble_vent_node1();
       }, false);
 
       var spy_bubble_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
         // Should NOT be called, but unfortunately will be
-        console.log('spy_bubble_native_node1');
+        log('spy_bubble_native_node1');
         spy_bubble_native_node1();
       }, false);
 
       // Listeners at the level where stopImmediatePropagation is called
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function(event) {
-        console.log('spy_bubble_vent_node2 + stopImmediatePropagation');
+        log('spy_bubble_vent_node2 + stopImmediatePropagation');
         event.stopImmediatePropagation();
         spy_bubble_vent_node2();
       }, false);
 
       var spy_bubble_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2_2');
+        log('spy_bubble_vent_node2_2');
         spy_bubble_vent_node2_2();
       }, false);
 
       var spy_bubble_native_node2 = sinon.spy();
       node2.addEventListener('customEvent', function() {
         // Should NOT be called, but unfortunately will be
-        console.log('spy_bubble_native_node2');
+        log('spy_bubble_native_node2');
         spy_bubble_native_node2();
       }, false);
 
@@ -821,14 +831,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
         // Should be called
-        console.log('spy_bubble_vent_node3');
+        log('spy_bubble_vent_node3');
         spy_bubble_vent_node3();
       }, false);
 
       var spy_bubble_native_node3 = sinon.spy();
       node3.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_bubble_native_node3');
+        log('spy_bubble_native_node3');
         spy_bubble_native_node3();
       }, false);
 
@@ -836,14 +846,14 @@ describe('Vent', function() {
       var spy_bubble_vent_node4 = sinon.spy();
       vent.on('customEvent', '#node4', function() {
         // Should be called
-        console.log('spy_bubble_vent_node4');
+        log('spy_bubble_vent_node4');
         spy_bubble_vent_node4();
       }, false);
 
       var spy_bubble_native_node4 = sinon.spy();
       node4.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_bubble_native_node4');
+        log('spy_bubble_native_node4');
         spy_bubble_native_node4();
       }, false);
 
@@ -892,97 +902,97 @@ describe('Vent', function() {
 
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_capture_vent_node0');
+        log('spy_capture_vent_node0');
         spy_capture_vent_node0();
       }, true);
 
       var spy_capture_vent_node0_2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_capture_vent_node0_2');
+        log('spy_capture_vent_node0_2');
         spy_capture_vent_node0_2();
       }, true);
 
       var spy_capture_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_capture_vent_node1');
+        log('spy_capture_vent_node1');
         spy_capture_vent_node1();
       }, true);
 
       var spy_capture_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_capture_vent_node1_2');
+        log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       var spy_capture_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_capture_vent_node2');
+        log('spy_capture_vent_node2');
         spy_capture_vent_node2();
       }, true);
 
       var spy_capture_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_capture_vent_node2_2');
+        log('spy_capture_vent_node2_2');
         spy_capture_vent_node2_2();
       }, true);
 
       var spy_capture_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_capture_vent_node3');
+        log('spy_capture_vent_node3');
         spy_capture_vent_node3();
       }, true);
 
       var spy_capture_vent_node3_2 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_capture_vent_node3_2');
+        log('spy_capture_vent_node3_2');
         spy_capture_vent_node3_2();
       }, true);
 
       var spy_bubble_vent_node3 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_bubble_vent_node3');
+        log('spy_bubble_vent_node3');
         spy_bubble_vent_node3();
       }, false);
 
       var spy_bubble_vent_node3_2 = sinon.spy();
       vent.on('customEvent', '#node3', function() {
-        console.log('spy_bubble_vent_node3_2');
+        log('spy_bubble_vent_node3_2');
         spy_bubble_vent_node3_2();
       }, false);
 
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
       var spy_bubble_vent_node2_2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
-        console.log('spy_bubble_vent_node2_2');
+        log('spy_bubble_vent_node2_2');
         spy_bubble_vent_node2_2();
       }, false);
 
       var spy_bubble_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_bubble_vent_node1');
+        log('spy_bubble_vent_node1');
         spy_bubble_vent_node1();
       }, false);
 
       var spy_bubble_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_bubble_vent_node1_2');
+        log('spy_bubble_vent_node1_2');
         spy_bubble_vent_node1_2();
       }, false);
 
       var spy_bubble_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_bubble_vent_node0');
+        log('spy_bubble_vent_node0');
         spy_bubble_vent_node0();
       }, false);
 
       var spy_bubble_vent_node0_2 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_bubble_vent_node0_2');
+        log('spy_bubble_vent_node0_2');
         spy_bubble_vent_node0_2();
       }, false);
 
@@ -1041,21 +1051,21 @@ describe('Vent', function() {
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
         // Should be called
-        console.log('spy_capture_vent_node0');
+        log('spy_capture_vent_node0');
         spy_capture_vent_node0();
       }, true);
 
       var spy_capture_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
         // Should be called
-        console.log('spy_capture_native_node0');
+        log('spy_capture_native_node0');
         spy_capture_native_node0();
       }, true);
 
       var spy_capture_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function(event) {
         // Should be called
-        console.log('spy_capture_vent_node1 + stopPropagation');
+        log('spy_capture_vent_node1 + stopPropagation');
         spy_capture_vent_node1();
 
         event.stopPropagation();
@@ -1064,35 +1074,35 @@ describe('Vent', function() {
       var spy_capture_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
         // Should be called
-        console.log('spy_capture_vent_node1_2');
+        log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       var spy_capture_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
         // Should NOT be called, unfortunarely
-        console.log('spy_capture_native_node1');
+        log('spy_capture_native_node1');
         spy_capture_native_node1();
       }, true);
 
       var spy_capture_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
         // Should NOT be called
-        console.log('spy_capture_vent_node2');
+        log('spy_capture_vent_node2');
         spy_capture_vent_node2();
       }, true);
 
       var spy_capture_native_node2 = sinon.spy();
       node2.addEventListener('customEvent', function() {
         // Should NOT be called
-        console.log('spy_capture_native_node2');
+        log('spy_capture_native_node2');
         spy_capture_native_node2();
       }, true);
 
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
@@ -1131,20 +1141,20 @@ describe('Vent', function() {
 
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
-        console.log('spy_capture_vent_node0');
+        log('spy_capture_vent_node0');
         spy_capture_vent_node0();
       }, true);
 
       var spy_capture_native_node0 = sinon.spy();
       node0.addEventListener('customEvent', function() {
         // Should be called, but unfortunately will not be
-        console.log('spy_capture_native_node0');
+        log('spy_capture_native_node0');
         spy_capture_native_node0();
       }, true);
 
       var spy_capture_vent_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function(event) {
-        console.log('spy_capture_vent_node1 + stopImmediatePropagation');
+        log('spy_capture_vent_node1 + stopImmediatePropagation');
         spy_capture_vent_node1();
 
         event.stopImmediatePropagation();
@@ -1152,35 +1162,35 @@ describe('Vent', function() {
 
       var spy_capture_vent_node1_2 = sinon.spy();
       vent.on('customEvent', '#node1', function() {
-        console.log('spy_capture_vent_node1_2');
+        log('spy_capture_vent_node1_2');
         spy_capture_vent_node1_2();
       }, true);
 
       var spy_capture_native_node1 = sinon.spy();
       node1.addEventListener('customEvent', function() {
         // Should NOT be called
-        console.log('spy_capture_native_node1');
+        log('spy_capture_native_node1');
         spy_capture_native_node1();
       }, true);
 
       var spy_capture_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
         // Should NOT be called
-        console.log('spy_capture_vent_node2');
+        log('spy_capture_vent_node2');
         spy_capture_vent_node2();
       }, true);
 
       var spy_capture_native_node2 = sinon.spy();
       node2.addEventListener('customEvent', function() {
         // Should NOT be called
-        console.log('spy_capture_native_node2');
+        log('spy_capture_native_node2');
         spy_capture_native_node2();
       }, true);
 
       var spy_bubble_vent_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function() {
         // Should NOT be called
-        console.log('spy_bubble_vent_node2');
+        log('spy_bubble_vent_node2');
         spy_bubble_vent_node2();
       }, false);
 
@@ -1269,7 +1279,6 @@ describe('Vent', function() {
       vent.on('customEvent', spy_1);
       vent.on('customEvent', spy_2);
 
-      console.log('dispatching');
       dispatch('customEvent', target);
 
       expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
