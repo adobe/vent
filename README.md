@@ -24,15 +24,14 @@ There are other event delegation libraries out there, so here's how Vent is diff
 * **Scoped**: Supports scoped selectors, i.e. `> .immediateChild`
 * **Real DOM**: Dispatches real, bubbling DOM events
 * **Capture**: Supports listening to events during the capture phase
-* **stopPropagation**: Correctly handles `stopPropagation()` within delegate listeners
 * **Tests**: Has comprehensive tests
 
-Name            | NS?                | Scoped?            | Real DOM?         | Capture?          | stopProp?      | Tests?
-----------------|:-------------------|:------------------:|:-----------------:|:-----------------:|:-----------------:|:-------------------:
-[Vent]          | :white_check_mark: | :white_check_mark: | :white_check_mark:| :white_check_mark:| :white_check_mark:| :white_check_mark:
-[jQuery]        | :white_check_mark: | :white_check_mark: | :x:               | :x:               | :x:               | :white_check_mark:
-[Gator]         | :x:                | :x:                | :white_check_mark:| :x:               | :x:               | :x:
-[ftdomdelegate] | :x:                | :x:                | :white_check_mark:| :white_check_mark:| :x:               | :white_check_mark:
+Name            | NS?                | Scoped?            | Real DOM?         | Capture?          | Tests?
+----------------|:-------------------|:------------------:|:-----------------:|:-----------------:|:-------------------:
+[Vent]          | :white_check_mark: | :white_check_mark: | :white_check_mark:| :white_check_mark:| :white_check_mark:
+[jQuery]        | :white_check_mark: | :white_check_mark: | :x:               | :x:               | :white_check_mark:
+[Gator]         | :x:                | :x:                | :white_check_mark:| :x:               | :x:
+[ftdomdelegate] | :x:                | :x:                | :white_check_mark:| :white_check_mark:| :white_check_mark:
 
 [Vent]: #vent
 [jQuery]: https://github.com/jquery/jquery
@@ -118,7 +117,7 @@ var vent = new Vent('#myApp');
 
 ### Adding direct event listeners
 
-Listen to an event directly on the element, including those that bubble:
+Listen to an event directly on the element, including those that bubble from descendant elements:
 
 ```js
 vent.on('resize', function(event) {
@@ -292,7 +291,13 @@ An event dispatched from `#node1` will take the following path:
 
 ![Event propagation](http://i.imgur.com/pfPK2NK.png)
 
-With Vent, listeners can be configured to be called during the *capture* or *bubbling phase*.
+With Vent, listeners can be configured to be called during the *capture* or *bubble phase*.
+
+To add an event listener in the *bubble phase*:
+
+```js
+vent.on('click', '#node1', handler);
+```
 
 To add an event listener in the *capture phase*:
 
@@ -300,13 +305,7 @@ To add an event listener in the *capture phase*:
 vent.on('click', '#node1', handler, true);
 ```
 
-To add an event listener in the *bubbling phase*:
-
-```js
-vent.on('click', '#node1', handler, false);
-```
-
-In most cases, you'll want to add your event listeners in the bubbling phase.
+In most cases, you'll want to add your event listeners in the bubble phase.
 
 
 ### Shortcomings
@@ -315,32 +314,30 @@ Because of how event delegation works, events added with Vent don't mix perfectl
 
 #### Vent and native events will not fire in the expected order
 
-Vent listens to DOM events in the capture phase, then simulates the capture and bubbling phases for its listeners. Because it simulates the capture and bubbling phases when it catches the event, native listeners on elements that descendants of the Vent instance's root element will fire **after** Vent listeners have fired.
+Because it simulates the capture and bubbling phases for delegated handlers, delegated handlers don't fire in the same order as they would if they were added directly with `addEventListener`.
 
 1. `#node2` dispatches a `click` event
-2. The event starts the *capture phase* and starts trickling down from the Window to `#node2`
-3. The Vent instance's `click` handler is called when the event reaches `#node0`
-4. Vent simulates the capture phase and trickles down until it reaches `#node2`, calling any delegated handlers along the way
-5. Vent simulates the bubble phase and bubbles back up until it reaches `#node0`, calling any delegated handlers along the way
-6. The event continues to trickle down in the *capture phase* until it reaches `#node2`, calling any handlers added with `addEventListener` along the way
-7. The event bubbles back up in the *bubble phase* until it reaches the Window, calling any handlers added with `addEventListener` along the way
+2. The event begins the *capture phase* and starts trickling down from `window` to `#node2`, calling any handlers added with `addEventListener` along the way
+3. The Vent instance's *capture phase* `click` handler is called when the event reaches `#node0`
+4. **Vent simulates the *capture phase***, trickling down from `#node0` to `#node2`, calling any delegated handlers along the way
+5. The event continues to trickle down in the *capture phase* until it reaches `#node2`, calling any handlers added with `addEventListener` along the way
+6. The event begins the *bubble phase* and starts bubbling up from `#node2` to `window`, calling any handlers added with `addEventListener` along the way
+7. The Vent instance's *bubble phase* `click` handler is called when the event reaches `#node0`
+8. **Vent simulates the *bubble phase***, bubbling from `#node2` to `#node0`, calling any delegated handlers along the way
+9. The event continues to bubble in the *bubble phase* until it reaches `window`, calling any handlers added with `addEventListener` along the way
 
-![Event order](http://i.imgur.com/rQfWo6O.png)
+As such:
 
-#### Native listeners CANNOT `stopPropagation` to Vent listeners
+* Native handlers in the *capture phase* on elements that are descendants of the Vent instance's root element will fire **after** Vent handlers
+* Native handlers in the *bubble phase* on elements that are descendants of the Vent instance's root element will fire **before** Vent handlers
 
-Because Vent's listeners run before those added natively with `addEventListener`, calling `stopPropagation` in a native event handler on an descendant of Vent's root element will have no effect -- Vent has already simulated capture / bubbling and called all of its handlers before the native event handler was called.
+#### Native listeners that call `stopPropagation` in the bubble phase stop ALL Vent handlers
 
-#### Vent listeners CAN `stopPropagation` to native listeners
+Because Vent's *bubble phase* listeners don't run until the event bubbles to the Vent root, calling `stopPropagation` in a native handler on an element that is a descendent of the Vent root will result in none of the Vent handlers in the *bubble phase* from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/rnqo95b1/).
 
-While Vent is simulating the bubble and capture phases, it checks if any handler along the way called `stopPropagation`. If it does, Vent will add a native DOM listener to the delegated element that stops propagation at the correct time during the actual capture and bubbling phases of the event.
+#### Vent listeners CANNOT `stopPropagation` to native handlers in the bubble phase
 
-#### When a Vent listener calls `stopImmedatePropagation`, it does not reliably stop native listeners
-
-Due to the technique described above, Vent cannot reliably `stopImmediatePropagation` to native listeners added to elements that are descendants of the root.
-
-However, you can simulate `stopImmediatePropagation` by calling `stopPropagation` when the event reaches a different element. For bubble phase listeners, call `stopPropagation` when the event reaches the element directly beneath the one you want to `stopImmediatePropagation` on. For capture phase listeners, call `stopPropagation` on the parent element of the element you want to call `stopImmediatePropagation` on.
-
+Because the event has already bubbled up to the Vent root and native listeners in the *bubble phase* have been called along the way, calling `stopPropagation` within a Vent handler will not prevent native listeners on elements that a descendants of the Vent root from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/mzpze5gd/).
 
 ## Browser support
 
