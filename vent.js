@@ -120,6 +120,9 @@
     // Ensure listeners always execute in the scope of this instance
     this._executeCaptureListeners = this._executeCaptureListeners.bind(this);
     this._executeBubbleListeners = this._executeBubbleListeners.bind(this);
+
+    // All Vent instances get an ID
+    this._id = this._id || lastID++;
   }
 
   /**
@@ -235,10 +238,6 @@
       // Get the event's path through the DOM
       var eventPath = this._getPath(event);
 
-      // Store for the bubble phase
-      // We'll re-use this again in the bubble phase
-      this._currentEventPath = eventPath;
-
       // Simulate the capture phase by trickling down the target list
       trickleDown: for (var eventPathIndex = eventPath.length - 1; eventPathIndex >= 0; eventPathIndex--) {
         if (!listeners.length) {
@@ -298,7 +297,7 @@
       var shouldBubble = event.type !== 'focus' && event.type !== 'blur';
 
       // Re-use the event path as calculated during the capture phase
-      var eventPath = this._currentEventPath;
+      var eventPath = this._getPath(event);
 
       // If listeners remain and propagation was not stopped, simulate the bubble phase by bubbling up the target list
       bubbleUp: for (var eventPathIndex = 0; eventPathIndex < eventPath.length; eventPathIndex++) {
@@ -328,8 +327,8 @@
     // Clean up after Vent
     this._undecorateEvent(event);
 
-    // Remove the cached path to avoid keeping references around
-    this._currentEventPath = null;
+    // Clear the path
+    event['_ventPath'+this._id] = null;
   };
 
   /**
@@ -352,6 +351,10 @@
     Restore the normal stopPropagation methods
   */
   Vent.prototype._getPath = function(event) {
+    if (event['_ventPath'+this._id]) {
+      return event['_ventPath'+this._id];
+    }
+
     // If the event was fired on a text node, delegation should assume the target is its parent
     var target = event.target;
     if (target.nodeType === Node.TEXT_NODE) {
@@ -368,6 +371,8 @@
       pathEl = pathEl.parentNode;
     }
     eventPath.push(this.root);
+
+    event['_ventPath'+this._id] = eventPath;
 
     return eventPath;
   };
@@ -434,7 +439,6 @@
       selector = selector.replace(scopedSelectorRegex, '>');
 
       // Store a unique ID and set a special attribute we'll use to scope
-      this._id = this._id || lastID++;
       this.root.setAttribute('__vent-id__', this._id);
     }
 
@@ -646,14 +650,19 @@
     @memberof Vent
   */
   Vent.prototype.destroy = function() {
+    if (this.destroyed) {
+      // Instance is already destroyed, do nothing
+      return;
+    }
+
     // Remove all events
     this.off();
 
     // Remove all references
     this._listenersByType = null;
     this._allListeners = null;
-    this._currentEventPath = null;
     this.root = null;
+    this.destroyed = true;
   };
 
   // Expose globally

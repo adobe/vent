@@ -2,6 +2,7 @@
 describe('Vent', function() {
   var target;
   var vent;
+  var vent_outer;
 
   /**
     Dispatch an event
@@ -38,14 +39,19 @@ describe('Vent', function() {
     target.id = 'target';
     target.className = 'target';
     document.body.appendChild(target);
-    vent = new Vent(target);
+    vent = vent_outer = new Vent(target);
   });
 
   afterEach(function() {
     if (target.parentNode === document.body) {
       document.body.removeChild(target);
     }
-    // vent.destroy();
+    vent.destroy();
+
+    if (vent !== vent_outer) {
+      // If a test re-assigned vent, make sure we clean up the one created in beforeEac
+      vent_outer.destroy();
+    }
   });
 
   it('should be defined in the global namespace', function() {
@@ -59,12 +65,12 @@ describe('Vent', function() {
   });
 
   it('should accept elements', function() {
-    var vent = new Vent(target);
+    vent = new Vent(target);
     expect(vent.root).to.equal(target);
   });
 
   it('should accept selectors', function() {
-    var vent = new Vent('#target');
+    vent = new Vent('#target');
     expect(vent.root).to.equal(target);
   });
 
@@ -380,7 +386,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_preventDefault;
       var spy_stopPropagation;
@@ -401,6 +407,7 @@ describe('Vent', function() {
       expect(spy_preventDefault.callCount).to.equal(1, 'spy_preventDefault call count after return false');
       expect(spy_stopPropagation.callCount).to.equal(1, 'spy_stopPropagation call count after return false');
       expect(spy_stopImmediatePropagation.callCount).to.equal(0, 'spy_stopImmediatePropagation call count after return false');
+
     });
 
     it('should call handlers when child elements trigger events', function() {
@@ -411,7 +418,7 @@ describe('Vent', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested lists.html'];
       var li_3_3 = target.querySelector('._3_3');
 
-      var vent = new Vent('#list');
+      vent = new Vent('#list');
 
       vent.on('click', spy_outer);
 
@@ -427,6 +434,7 @@ describe('Vent', function() {
 
       expect(spy_3_3.calledBefore(spy_3)).to.equal(true, 'spy_3_3 called before spy_3_3');
       expect(spy_3.calledBefore(spy_outer)).to.equal(true, 'spy_3 called before spy_outer');
+
     });
 
     it('should bubble along the correct path if the DOM is modified during event handling', function() {
@@ -436,7 +444,7 @@ describe('Vent', function() {
       var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       // Capture phase listeners
       var spy_capture_vent_node0 = sinon.spy();
@@ -586,6 +594,7 @@ describe('Vent', function() {
       expect(spy_bubble_vent_node1.calledBefore(spy_bubble_vent_node1_2)).to.equal(true, 'spy_bubble_vent_node1 called before spy_bubble_vent_node1_2');
       expect(spy_bubble_vent_node1_2.calledBefore(spy_bubble_vent_node0)).to.equal(true, 'spy_bubble_vent_node1_2 called before spy_bubble_vent_node0');
       expect(spy_bubble_vent_node0.calledBefore(spy_bubble_vent_node0_2)).to.equal(true, 'spy_bubble_vent_node0 called before spy_bubble_vent_node0_2');
+
     });
   });
 
@@ -596,7 +605,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       // A listener in the capture phase UNDER where Vent is listening
       var spy_capture_native_node1 = sinon.spy();
@@ -617,6 +626,7 @@ describe('Vent', function() {
 
       expect(spy_capture_native_node1.callCount).to.equal(1, 'spy_capture_native_node1 after event dispatched');
       expect(spy_bubble_vent_node2.callCount).to.equal(0, 'spy_bubble_vent_node2 after event dispatched and stopPropagation() called');
+
     });
 
     it('should not execute the bubble phase listeners if a native event listener calls stopPropagation() in the bubble phase', function() {
@@ -625,7 +635,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       // A listener in the capture phase UNDER where Vent is listening
       var spy_capture_native_node1 = sinon.spy();
@@ -646,6 +656,7 @@ describe('Vent', function() {
 
       expect(spy_capture_native_node1.callCount).to.equal(1, 'spy_capture_native_node1 after event dispatched');
       expect(spy_bubble_vent_node2.callCount).to.equal(0, 'spy_bubble_vent_node2 after event dispatched and stopPropagation() called');
+
     });
 
     it('should have correct behavior for stopPropagation() for listeners added in the bubble phase', function() {
@@ -656,7 +667,7 @@ describe('Vent', function() {
       var node3 = target.querySelector('#node3');
       var node4 = target.querySelector('#node4');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       // Listeners at the root, above where stopPropagation was called
       var spy_bubble_vent_node0 = sinon.spy();
@@ -764,6 +775,7 @@ describe('Vent', function() {
       // Make sure listeners were called in the right order
       expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node2');
       expect(spy_bubble_vent_node4.calledBefore(spy_bubble_vent_node3)).to.equal(true, 'spy_bubble_vent_node4 called before spy_bubble_vent_node3');
+
     });
 
     it('should have correct behavior for stopImmediatePropagation() for listeners added in the bubble phase', function() {
@@ -774,7 +786,7 @@ describe('Vent', function() {
       var node3 = target.querySelector('#node3');
       var node4 = target.querySelector('#node4');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       // Listeners at the root, above where stopImmediatePropagation was called
       var spy_bubble_vent_node0 = sinon.spy();
@@ -888,7 +900,8 @@ describe('Vent', function() {
       // Make sure listeners were called in the right order
       expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node2');
       expect(spy_bubble_vent_node4.calledBefore(spy_bubble_vent_node3)).to.equal(true, 'spy_bubble_vent_node4 called before spy_bubble_vent_node3');
-    });
+
+  });
 
   });
 
@@ -898,7 +911,7 @@ describe('Vent', function() {
       var node0 = target.querySelector('#node0');
       var node3 = target.querySelector('#node3');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
@@ -1037,6 +1050,7 @@ describe('Vent', function() {
       expect(spy_bubble_vent_node1.calledBefore(spy_bubble_vent_node1_2)).to.equal(true, 'spy_bubble_vent_node1 called before spy_bubble_vent_node1_2');
       expect(spy_bubble_vent_node1_2.calledBefore(spy_bubble_vent_node0)).to.equal(true, 'spy_bubble_vent_node1_2 called before spy_bubble_vent_node0');
       expect(spy_bubble_vent_node0.calledBefore(spy_bubble_vent_node0_2)).to.equal(true, 'spy_bubble_vent_node0 called before spy_bubble_vent_node0_2');
+
     });
 
     it('should have correct behavior for stopPropagation() for listeners added in the capture phase', function() {
@@ -1046,7 +1060,7 @@ describe('Vent', function() {
       var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
@@ -1128,6 +1142,7 @@ describe('Vent', function() {
 
       // Make sure the capture phase listeners were called in the right order
       expect(spy_capture_vent_node0.calledBefore(spy_capture_vent_node1)).to.equal(true, 'spy_capture_vent_node0 called before spy_capture_vent_node1');
+
     });
 
     it('should have correct behavior for stopImmediatePropagation() for listeners added in the capture phase', function() {
@@ -1137,7 +1152,7 @@ describe('Vent', function() {
       var node2 = target.querySelector('#node2');
       var node3 = target.querySelector('#node3');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_capture_vent_node0 = sinon.spy();
       vent.on('customEvent', function() {
@@ -1218,10 +1233,10 @@ describe('Vent', function() {
 
       // Make sure the capture phase listeners were called in the right order
       expect(spy_capture_vent_node0.calledBefore(spy_capture_vent_node1)).to.equal(true, 'spy_capture_vent_node0 called before spy_capture_vent_node1');
+
     });
 
     it('should set the correct phase for capture/bubble events', function() {
-      var vent = new Vent(target);
       var bubbleSpy = sinon.spy();
       var captureSpy = sinon.spy();
       var bubblePhase;
@@ -1401,7 +1416,7 @@ describe('Vent', function() {
     });
 
     it('should add, handle, and remove events directly on the window', function() {
-      var vent = new Vent(window);
+      vent = new Vent(window);
 
       var spy = sinon.spy();
 
@@ -1418,10 +1433,11 @@ describe('Vent', function() {
       dispatch('customEvent', window);
 
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
+
     });
 
     it('should handle events that bubble to window from document', function() {
-      var vent = new Vent(window);
+      vent = new Vent(window);
 
       var spy = sinon.spy();
 
@@ -1438,10 +1454,11 @@ describe('Vent', function() {
       dispatch('customEvent', document);
 
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
+
     });
 
     it('should handle events that bubble to window from document.documentElement', function() {
-      var vent = new Vent(window);
+      vent = new Vent(window);
 
       var spy = sinon.spy();
 
@@ -1458,10 +1475,11 @@ describe('Vent', function() {
       dispatch('customEvent', document.documentElement);
 
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
+
     });
 
     it('should handle events that bubble to window from document.body', function() {
-      var vent = new Vent(window);
+      vent = new Vent(window);
 
       var spy = sinon.spy();
 
@@ -1478,6 +1496,7 @@ describe('Vent', function() {
       dispatch('customEvent', document.body);
 
       expect(spy.callCount).to.equal(0, 'Call count after removing listener and dispatching event');
+
     });
 
     it('should call all listeners when first listener removed during event callback', function() {
@@ -1628,7 +1647,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_node0 = sinon.spy();
       vent.on('customEvent', function(event) {
@@ -1656,6 +1675,7 @@ describe('Vent', function() {
       expect(spy_node0.callCount).to.equal(1, 'spy_node0 call count after event dispatched');
       expect(spy_node1.callCount).to.equal(1, 'spy_node1 call count after event dispatched');
       expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after event dispatched');
+
     });
 
     it('should add, handle, and remove events with and without basic delegation', function() {
@@ -1684,7 +1704,7 @@ describe('Vent', function() {
     });
 
     it('should add, handle, and remove events with basic delegation on window', function() {
-      var vent = new Vent(window);
+      vent = new Vent(window);
 
       var spy = sinon.spy();
 
@@ -1701,6 +1721,7 @@ describe('Vent', function() {
       dispatch('customEvent', content);
 
       expect(spy.callCount).to.equal(1, 'Call count after dispatching event on target element');
+
     });
 
     it('should handle events dispatched on textNodes within the delegated elements', function() {
@@ -1764,7 +1785,7 @@ describe('Vent', function() {
         target.innerHTML = window.__html__['tests/snippets/Menu.html'];
         var menu = target.querySelector('#menu');
 
-        var vent = new Vent(menu);
+        vent = new Vent(menu);
         var spy = sinon.spy();
 
         vent.on('customEvent', scopePrefix+' .menu-title', function(event) {
@@ -1783,7 +1804,7 @@ describe('Vent', function() {
     }
 
     it('should support delegation with scoped selectors with >', testScopedSelectorPrefix('>'));
-    it('should support delegation with scoped selectors with >', testScopedSelectorPrefix(':scope >'));
+    it('should support delegation with scoped selectors with :scope >', testScopedSelectorPrefix(':scope >'));
   });
 
   describe('namespaces', function() {
@@ -1889,7 +1910,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_node0 = sinon.spy();
       vent.on('focus', spy_node0);
@@ -1905,6 +1926,7 @@ describe('Vent', function() {
       expect(spy_node0.callCount).to.equal(0, 'spy_node0 call count after focus');
       expect(spy_node1.callCount).to.equal(0, 'spy_node1 call count after focus');
       expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after focus');
+
     });
 
     it('should not bubble blur events', function() {
@@ -1913,7 +1935,7 @@ describe('Vent', function() {
       var node1 = target.querySelector('#node1');
       var node2 = target.querySelector('#node2');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_node0 = sinon.spy();
       vent.on('blur', spy_node0);
@@ -1929,13 +1951,14 @@ describe('Vent', function() {
       expect(spy_node0.callCount).to.equal(0, 'spy_node0 call count after blur');
       expect(spy_node1.callCount).to.equal(0, 'spy_node1 call count after blur');
       expect(spy_node2.callCount).to.equal(1, 'spy_node2 call count after blur');
+
     });
 
     it('should support listening to focus directly on the root element', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
 
-      var vent = new Vent(node0);
+      vent = new Vent(node0);
 
       var spy_node0 = sinon.spy();
       vent.on('focus', spy_node0);
@@ -1943,6 +1966,53 @@ describe('Vent', function() {
       dispatch('focus', node0);
 
       expect(spy_node0.callCount).to.equal(1, 'spy_node0 call count after blur');
+    });
+  });
+
+  describe('nested instances', function() {
+    it('should have the correct event path for nested instances', function() {
+      target.innerHTML = window.__html__['tests/snippets/Nested.html'];
+      var node0 = target.querySelector('#node0');
+      var node1 = target.querySelector('#node1');
+      var node2 = target.querySelector('#node2');
+      var node3 = target.querySelector('#node3');
+
+      var vent_outer = new Vent(node0);
+      var vent_inner = new Vent(node2);
+
+      // Outer listeners
+      var spy_vent_outer_node1 = sinon.spy();
+      vent_outer.on('customEvent', '#node1', spy_vent_outer_node1);
+
+      var spy_vent_outer_node2 = sinon.spy();
+      vent_outer.on('customEvent', '#node2', spy_vent_outer_node2);
+
+      var spy_vent_outer_node3 = sinon.spy();
+      vent_outer.on('customEvent', '#node3', spy_vent_outer_node3);
+
+      // Inner listeners
+      var spy_vent_inner_node1 = sinon.spy(); // Above the root
+      vent_inner.on('customEvent', '#node1', spy_vent_inner_node1);
+
+      var spy_vent_inner_node2 = sinon.spy(); // Above the root
+      vent_inner.on('customEvent', '#node2', spy_vent_inner_node2);
+
+      var spy_vent_inner_node3 = sinon.spy();
+      vent_inner.on('customEvent', '#node3', spy_vent_inner_node3);
+
+      dispatch('customEvent', node3);
+
+      expect(spy_vent_outer_node1.callCount).to.equal(1, 'spy_vent_outer_node1 call count after event dispatched');
+      expect(spy_vent_outer_node2.callCount).to.equal(1, 'spy_vent_outer_node2 call count after event dispatched');
+      expect(spy_vent_outer_node3.callCount).to.equal(1, 'spy_vent_outer_node3 call count after event dispatched');
+
+      expect(spy_vent_inner_node1.callCount).to.equal(0, 'spy_vent_inner_node1 call count after event dispatched');
+      expect(spy_vent_inner_node2.callCount).to.equal(0, 'spy_vent_inner_node2 call count after event dispatched');
+      expect(spy_vent_inner_node3.callCount).to.equal(1, 'spy_vent_inner_node3 call count after event dispatched');
+
+      // Manually clean up
+      vent_outer.destroy();
+      vent_inner.destroy();
     });
   });
 
