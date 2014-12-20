@@ -1605,6 +1605,22 @@ describe('Vent', function() {
       expect(event.defaultPrevented).to.equal(true, 'event.defaultPrevented after event dispatched');
       expect(event).to.be.instanceof(Event);
     });
+
+    it('should set event.detail correctly', function() {
+      var spy = sinon.spy();
+      vent.on('customEvent', function(event) {
+        expect(event.detail).to.equal(detailObj);
+        spy();
+      });
+
+      var detailObj = { a: 1 };
+
+      vent.dispatch('customEvent', {
+        detail: detailObj
+      });
+
+      expect(spy.callCount).to.equal(1, 'spy call count after event dispatched');
+    });
   });
 
   describe('delegation', function() {
