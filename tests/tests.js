@@ -1668,6 +1668,7 @@ describe('Vent', function() {
       var spy_node0 = sinon.spy();
       vent.on('customEvent', function(event) {
         expect(this).to.equal(node0);
+        expect(event.matchedTarget).to.equal(node0);
         expect(event.target).to.equal(node2);
         spy_node0();
       });
@@ -1675,6 +1676,7 @@ describe('Vent', function() {
       var spy_node1 = sinon.spy();
       vent.on('customEvent', '#node1', function(event) {
         expect(this).to.equal(node1);
+        expect(event.matchedTarget).to.equal(node1);
         expect(event.target).to.equal(node2);
         spy_node1();
       });
@@ -1682,6 +1684,7 @@ describe('Vent', function() {
       var spy_node2 = sinon.spy();
       vent.on('customEvent', '#node2', function(event) {
         expect(this).to.equal(node2);
+        expect(event.matchedTarget).to.equal(node2);
         expect(event.target).to.equal(node2);
         spy_node2();
       });

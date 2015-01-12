@@ -197,6 +197,9 @@
         ) &&
         this._listenerMatchesEventPhase(listener, useCapture)
       ) {
+        // Store the target that matches the event currently
+        event.matchedTarget = target;
+
         // Call handlers in the scope of the delegate target, passing the event along
         returnValue = listener.handler.call(target, event);
 

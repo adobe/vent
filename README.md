@@ -184,6 +184,43 @@ vent.off('click', '.reset', handler, true);
 ``````
 
 
+### Event properties and handler context
+
+Vent sets properties of the event object and context of the handlers as follows:
+
+* `this` - The element that matched for delegation
+* `event.matchedTarget` - The element that matched for delegation (same as `this`)
+* `event.currentTarget` - The root element of the Vent instance
+* `event.target` - The element that originally dispatched the event
+
+Assuming the following HTML structure:
+
+```html
+<div id="node0">
+  <div id="node1">
+    <button id="button0">Click me!</button>
+  </div>
+</div>
+```
+
+If the Vent root was `#node0` and a click event was triggered on `#button0`:
+
+```js
+// Create a Vent instance with #node0 as the root
+var vent = new Vent('#node0');
+
+// Listen for clicks on #node1 and its descendants
+vent.on('click', '#node1', function(event) {
+  console.assert(this === document.querySelector('#node1'));
+  console.assert(event.matchedTarget === document.querySelector('#node1'));
+  console.assert(event.currentTarget === document.querySelector('#node0'));
+  console.assert(event.target === document.querySelector('#button0'))
+});
+
+// Click the button
+document.querySelector('#button0').click();
+```
+
 ### Using event namespaces
 
 You may provide any number of event namespaces in the event name:
@@ -312,18 +349,18 @@ In most cases, you'll want to add your event listeners in the bubble phase.
 
 Because of how event delegation works, events added with Vent don't mix perfectly with events added with `addEventListener`. Here's what to expect.
 
-#### Vent and native events will not fire in the expected order
+#### Vent and native events will not fire in the same order as native listeners
 
 Because it simulates the capture and bubbling phases for delegated handlers, delegated handlers don't fire in the same order as they would if they were added directly with `addEventListener`.
 
 1. `#node2` dispatches a `click` event
 2. The event begins the *capture phase* and starts trickling down from `window` to `#node2`, calling any handlers added with `addEventListener` along the way
 3. The Vent instance's *capture phase* `click` handler is called when the event reaches `#node0`
-4. **Vent simulates the *capture phase***, trickling down from `#node0` to `#node2`, calling any delegated handlers along the way
+4. **Vent simulates the** ***capture phase***, trickling down from `#node0` to `#node2`, calling any delegated handlers along the way
 5. The event continues to trickle down in the *capture phase* until it reaches `#node2`, calling any handlers added with `addEventListener` along the way
 6. The event begins the *bubble phase* and starts bubbling up from `#node2` to `window`, calling any handlers added with `addEventListener` along the way
 7. The Vent instance's *bubble phase* `click` handler is called when the event reaches `#node0`
-8. **Vent simulates the *bubble phase***, bubbling from `#node2` to `#node0`, calling any delegated handlers along the way
+8. **Vent simulates the** ***bubble phase***, bubbling from `#node2` to `#node0`, calling any delegated handlers along the way
 9. The event continues to bubble in the *bubble phase* until it reaches `window`, calling any handlers added with `addEventListener` along the way
 
 As such:
@@ -331,11 +368,11 @@ As such:
 * Native handlers in the *capture phase* on elements that are descendants of the Vent instance's root element will fire **after** Vent handlers
 * Native handlers in the *bubble phase* on elements that are descendants of the Vent instance's root element will fire **before** Vent handlers
 
-#### Native listeners that call `stopPropagation` in the bubble phase stop ALL Vent handlers
+#### Calling `stopPropagation` in a native bubble phase handler will stop ALL Vent handlers
 
-Because Vent's *bubble phase* listeners don't run until the event bubbles to the Vent root, calling `stopPropagation` in a native handler on an element that is a descendent of the Vent root will result in none of the Vent handlers in the *bubble phase* from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/rnqo95b1/).
+Because Vent's *bubble phase* handlers don't run until the event bubbles to the Vent root, calling `stopPropagation` in a native handler on an element that is a descendant of the Vent root will result in none of the Vent handlers in the *bubble phase* from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/rnqo95b1/).
 
-#### Vent listeners CANNOT `stopPropagation` to native handlers in the bubble phase
+#### Vent handlers CANNOT `stopPropagation` to native handlers in the bubble phase
 
 Because the event has already bubbled up to the Vent root and native listeners in the *bubble phase* have been called along the way, calling `stopPropagation` within a Vent handler will not prevent native listeners on elements that a descendants of the Vent root from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/mzpze5gd/).
 
@@ -356,14 +393,14 @@ Safari                | 5+
 Vent uses the following browser technologies:
 
 * [`querySelector`](https://developer.mozilla.org/en-US/docs/Web/API/document.querySelector)
-* [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a fallback for [`createEvent`](https://developer.mozilla.org/en-US/docs/Web/API/document.createEvent)
+* [`CustomEvent`](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) with a fall-back for [`createEvent`](https://developer.mozilla.org/en-US/docs/Web/API/document.createEvent)
 * [`addEventListener()`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener)
 
 Vent may work correctly on other browsers that support these technologies.
 
 ## Contributing
 
-Pull requests are welcome! Please see the [contribution guidelines](CONTRIBUTING.md) before you get started.
+Pull requests and issue reports are welcome! Please see the [contribution guidelines](CONTRIBUTING.md) before you get started.
 
 ## License
 
