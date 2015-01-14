@@ -1265,6 +1265,36 @@ describe('Vent', function() {
 
       expect(captureSpy.calledBefore(bubbleSpy)).to.equal(true, 'captureSpy called before bubbleSpy');
     });
+
+    it('should set the correct phase for events dispatched on the root', function() {
+      var bubbleSpy = sinon.spy();
+      var captureSpy = sinon.spy();
+      var bubblePhase;
+      var capturePhase;
+
+      // Listen at root in "bubble phase"
+      vent.on('customEvent', function(event) {
+        bubblePhase = event.eventPhase;
+        bubbleSpy();
+      }, false);
+
+      // Listen at root in "capture phase"
+      vent.on('customEvent', function(event) {
+        capturePhase = event.eventPhase;
+        captureSpy();
+      }, true);
+
+      // Dispatch at Vent root
+      dispatch('customEvent', target);
+
+      expect(captureSpy.callCount).to.equal(1, 'captureSpy call count after event dispatched');
+      expect(bubbleSpy.callCount).to.equal(1, 'bubbleSpy call count after event dispatched');
+
+      expect(capturePhase).to.equal(2, 'Phase for capture listener at root');
+      expect(bubblePhase).to.equal(2, 'Phase for bubble listener at root');
+
+      expect(captureSpy.calledBefore(bubbleSpy)).to.equal(true, 'captureSpy called before bubbleSpy');
+    });
   });
 
   describe('basic events', function() {
