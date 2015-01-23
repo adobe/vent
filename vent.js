@@ -417,6 +417,11 @@
       useCapture = false;
     }
 
+    // Force useCapture for focus and blur events
+    if (eventName === 'focus' || eventName === 'blur') {
+      useCapture = true;
+    }
+
     // Extract namespaces
     var namespaces = null;
     var dotIndex = eventName.indexOf('.');
