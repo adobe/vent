@@ -417,17 +417,17 @@
       useCapture = false;
     }
 
-    // Force useCapture for focus and blur events
-    if (eventName === 'focus' || eventName === 'blur') {
-      useCapture = true;
-    }
-
     // Extract namespaces
     var namespaces = null;
     var dotIndex = eventName.indexOf('.');
     if (dotIndex !== -1) {
       namespaces = eventName.slice(dotIndex+1).split('.');
       eventName = eventName.slice(0, dotIndex);
+    }
+
+    // Force useCapture for focus and blur events
+    if (eventName === 'focus' || eventName === 'blur') {
+      useCapture = true;
     }
 
     // Get/create the list for the event type
