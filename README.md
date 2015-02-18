@@ -57,8 +57,9 @@ Name         | Type     | Required | Default  | Description
 `eventName`  | String   | **yes**  | -        | The event name to listen for, including optional namespace(s).
 `selector`   | String   | no       | -        | The selector to use for event delegation.
 `handler`    | Function | **yes**  | -        | The function that will be called when the event is fired.
-`useCapture` | Boolean  | no       | false    | Only remove listeners with useCapture set to the value passed in.
+`useCapture` | Boolean  | no       | false †  | Only remove listeners with useCapture set to the value passed in.
 
+† For [`focus`](https://developer.mozilla.org/en-US/docs/Web/Events/focus) and [`blur`](https://developer.mozilla.org/en-US/docs/Web/Events/blur) events, `useCapture` will default to `true` unless explcitly specified as these events do not bubble.
 
 #### vent.off(eventName[, selector], handler[, useCapture]) → this
 
