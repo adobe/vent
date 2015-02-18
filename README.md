@@ -1,5 +1,8 @@
 # Vent
 > DOM event delegation that actually works
+<img src="http://i.imgur.com/dtee0iY.png" align="right" alt="Vent logo">
+
+Vent is a well-tested event delegation library that supports real DOM events, capture phase listeners, namespaces, and scoped selectors.
 
 ## What is event delegation?
 
@@ -327,7 +330,7 @@ Assuming the following HTML structure:
 
 An event dispatched from `#node1` will take the following path:
 
-![Event propagation](http://i.imgur.com/pfPK2NK.png)
+![Event propagation](http://i.imgur.com/Sla5qCg.png)
 
 With Vent, listeners can be configured to be called during the *capture* or *bubble phase*.
 
@@ -375,7 +378,7 @@ Because Vent's *bubble phase* handlers don't run until the event bubbles to the 
 
 #### Vent handlers CANNOT `stopPropagation` to native handlers in the bubble phase
 
-Because the event has already bubbled up to the Vent root and native listeners in the *bubble phase* have been called along the way, calling `stopPropagation` within a Vent handler will not prevent native listeners on elements that a descendants of the Vent root from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/mzpze5gd/).
+Because the event has already bubbled up to the Vent root and native listeners in the *bubble phase* have been called along the way, calling `stopPropagation` within a *bubble phase* Vent handler will not prevent native listeners on elements that a descendants of the Vent root from being called. [jQuery's event delegation behaves the same way](http://jsfiddle.net/lazd/mzpze5gd/).
 
 ## Browser support
 
