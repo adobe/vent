@@ -189,7 +189,8 @@
     executeListeners: for (var listenerIndex = 0; listenerIndex < listeners.length; listenerIndex++) {
       listener = listeners[listenerIndex];
 
-      if (
+      // Do not process events on disabled items #1
+      if (target.disabled !== true &&
         // Check if the target element matches for this listener
         (
           this._listenerMatchesRootTarget(listener, target) ||

@@ -437,6 +437,26 @@ describe('Vent', function() {
 
     });
 
+    it('should not call the listener if the item is disabled', function() {
+      var spy_btn = sinon.spy();
+      var spy_custom = sinon.spy();
+
+      target.innerHTML = window.__html__['tests/snippets/Disabled.html'];
+
+      var image = target.querySelector('.img_1');
+
+      vent = new Vent(target);
+
+      vent.on('click', '.btn_1', spy_btn);
+      vent.on('customEvent', '.btn_1', spy_custom);
+
+      dispatch('click', image);
+      dispatch('customEvent', image);
+
+      expect(spy_btn.callCount).to.equal(0, 'spy_btn call count after event dispatched');
+      expect(spy_custom.callCount).to.equal(0, 'spy_custom count after event dispatched');
+    });
+
     it('should bubble along the correct path if the DOM is modified during event handling', function() {
       target.innerHTML = window.__html__['tests/snippets/Nested.html'];
       var node0 = target.querySelector('#node0');
@@ -900,8 +920,7 @@ describe('Vent', function() {
       // Make sure listeners were called in the right order
       expect(spy_bubble_vent_node3.calledBefore(spy_bubble_vent_node2)).to.equal(true, 'spy_bubble_vent_node3 called before spy_bubble_vent_node2');
       expect(spy_bubble_vent_node4.calledBefore(spy_bubble_vent_node3)).to.equal(true, 'spy_bubble_vent_node4 called before spy_bubble_vent_node3');
-
-  });
+    });
 
   });
 
