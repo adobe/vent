@@ -5,6 +5,30 @@ describe('Vent', function() {
   var vent_outer;
 
   /**
+    Skip for specific UAs
+  */
+  var itNot = function(string, assertion, test) {
+    if (window.navigator.userAgent.indexOf(string) === -1) {
+      it(assertion, test);
+    }
+    else {
+      it.skip(assertion, test);
+    }
+  };
+
+  /**
+    Runs only this test, regardless of UA
+  */
+  itNot.only = function(string, assertion, test) {
+    it.only(assertion, test);
+  };
+
+  /**
+    Skip this tests
+  */
+  itNot.skip = function() {};
+
+  /**
     Dispatch an event
   */
   function dispatch(eventName, element, options) {
@@ -437,24 +461,52 @@ describe('Vent', function() {
 
     });
 
-    it('should not call the listener if the item is disabled', function() {
-      var spy_btn = sinon.spy();
-      var spy_custom = sinon.spy();
+    itNot('Firefox', 'should call the listener for non-click events if the item is disabled', function() {
+      var spy = sinon.spy();
 
       target.innerHTML = window.__html__['tests/snippets/Disabled.html'];
 
-      var image = target.querySelector('.img_1');
+      var span = target.querySelector('.span');
 
       vent = new Vent(target);
 
-      vent.on('click', '.btn_1', spy_btn);
-      vent.on('customEvent', '.btn_1', spy_custom);
+      vent.on('customEvent', '.button', spy);
 
-      dispatch('click', image);
-      dispatch('customEvent', image);
+      dispatch('customEvent', span);
 
-      expect(spy_btn.callCount).to.equal(0, 'spy_btn call count after event dispatched');
-      expect(spy_custom.callCount).to.equal(0, 'spy_custom count after event dispatched');
+      expect(spy.callCount).to.equal(1, 'spy count after event dispatched');
+    });
+
+    it('should NOT call the listener for click events if the item is disabled', function() {
+      var spy = sinon.spy();
+
+      target.innerHTML = window.__html__['tests/snippets/Disabled.html'];
+
+      var span = target.querySelector('.span');
+
+      vent = new Vent(target);
+
+      vent.on('click', '.button', spy);
+
+      dispatch('click', span);
+
+      expect(spy.callCount).to.equal(0, 'spy count after event dispatched');
+    });
+
+    itNot('Firefox', 'should continue to simulate bubbling if a disabled item is encountered', function() {
+      var spy = sinon.spy();
+
+      target.innerHTML = window.__html__['tests/snippets/Disabled.html'];
+
+      var span = target.querySelector('.span');
+
+      vent = new Vent(target);
+
+      vent.on('click', spy);
+
+      dispatch('click', span);
+
+      expect(spy.callCount).to.equal(1, 'spy count after event dispatched');
     });
 
     it('should bubble along the correct path if the DOM is modified during event handling', function() {
