@@ -1,6 +1,6 @@
 {
   "name": "vent",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "scripts": {
     "test": "rm -rf coverage/; REPORT_COVERAGE=1 node_modules/karma/bin/karma start --single-run --no-auto-watch",
     "watch": "node_modules/karma/bin/karma start --no-single-run --auto-watch"
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/lazd/vent.git"
   },
-  "author": "Larry Davis <lazdnet@adobe.com>",
+  "author": "Larry Davis <lazdnet@gmail.com>",
   "license": "BSD",
   "bugs": {
     "url": "https://github.com/lazd/vent/issues"
