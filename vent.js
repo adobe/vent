@@ -1,4 +1,19 @@
-(function(global) {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(function() {
+      return (root.Vent = factory());
+    });
+  }
+  else if (typeof exports === 'object') {
+    // CommonJS
+    module.exports = factory();
+  }
+  else {
+    // Global Variables
+    root.Vent = factory();
+  }
+}(this, function() {
   // The next ID we'll use for scoped delegation
   var lastID = 0;
 
@@ -83,7 +98,7 @@
       The element or selector indicating the element to use as the delegation root.
   */
   function Vent(elementOrSelector) {
-    if (this === global) {
+    if (this === root) {
       throw new Error('Vent must be invoked with the new keyword');
     }
 
@@ -679,6 +694,5 @@
     this.destroyed = true;
   };
 
-  // Expose globally
-  global.Vent = Vent;
-}(this));
+  return Vent;
+}));
