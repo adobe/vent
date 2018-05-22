@@ -125,8 +125,8 @@ describe('Vent', function() {
 
       vent.off('event_1', spy_1);
 
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('event_1', target);
 
@@ -148,8 +148,8 @@ describe('Vent', function() {
       vent.off('event_1', spy_1);
       vent.off('event_1', spy_2);
 
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('event_1', target);
 
@@ -188,9 +188,9 @@ describe('Vent', function() {
 
       vent.off();
 
-      spy_1.reset();
-      spy_1_delegate.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_1_delegate.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('event_1', target);
       dispatch('event_1', content);
@@ -224,9 +224,9 @@ describe('Vent', function() {
 
       vent.off('event_main');
 
-      spy_1.reset();
-      spy_2.reset();
-      spy_other.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
+      spy_other.resetHistory();
 
       dispatch('event_main', target);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main)');
@@ -255,9 +255,9 @@ describe('Vent', function() {
 
       vent.off('event_main', '.content');
 
-      spy_1.reset();
-      spy_2.reset();
-      spy_direct.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
+      spy_direct.resetHistory();
 
       dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main)');
@@ -289,9 +289,9 @@ describe('Vent', function() {
 
       vent.off('event_main', '.content', spy_delegate);
 
-      spy_1.reset();
-      spy_2.reset();
-      spy_delegate.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
+      spy_delegate.resetHistory();
 
       dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(2, 'spy_1 call count after off(event_main, .content, spy_1)');
@@ -320,8 +320,8 @@ describe('Vent', function() {
 
       vent.off(null, null, spy_1);
 
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('event_main', content);
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after off(event_main, .content, spy_1)');
@@ -351,10 +351,10 @@ describe('Vent', function() {
 
       vent.off('event_main', '.content', spy_capture, true);
 
-      spy_noSelector.reset();
-      spy_capture.reset();
-      spy_bubble.reset();
-      spy_other.reset();
+      spy_noSelector.resetHistory();
+      spy_capture.resetHistory();
+      spy_bubble.resetHistory();
+      spy_other.resetHistory();
 
       dispatch('event_main', content);
 
@@ -387,10 +387,10 @@ describe('Vent', function() {
 
       vent.off('event_main', '.content', spy_bubble, false);
 
-      spy_noSelector.reset();
-      spy_capture.reset();
-      spy_bubble.reset();
-      spy_other.reset();
+      spy_noSelector.resetHistory();
+      spy_capture.resetHistory();
+      spy_bubble.resetHistory();
+      spy_other.resetHistory();
 
       dispatch('event_main', content);
 
@@ -1381,7 +1381,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', target);
 
@@ -1412,8 +1412,8 @@ describe('Vent', function() {
 
       expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching event');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching event');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       vent.off('customEvent', spy_1);
 
@@ -1421,8 +1421,8 @@ describe('Vent', function() {
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after removing spy_1 listener');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       vent.off('customEvent', spy_2);
 
@@ -1443,15 +1443,15 @@ describe('Vent', function() {
 
       expect(spy_1.callCount).to.equal(1, 'spy_1 call count after dispatching customEvent_1 event');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after dispatching customEvent_1 event');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('customEvent_2', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after dispatching customEvent_2 event');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after dispatching customEvent_2 event');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       vent.off('customEvent_1', spy_1);
 
@@ -1459,15 +1459,15 @@ describe('Vent', function() {
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener and dispatching customEvent_1 event');
       expect(spy_2.callCount).to.equal(0, 'spy_2 call count after removing spy_1 listener and dispatching customEvent_1 event');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       dispatch('customEvent_2', target);
 
       expect(spy_1.callCount).to.equal(0, 'spy_1 call count after removing spy_1 listener and dispatching customEvent_2 event');
       expect(spy_2.callCount).to.equal(1, 'spy_2 call count after removing spy_1 listener and dispatching customEvent_2 event');
-      spy_1.reset();
-      spy_2.reset();
+      spy_1.resetHistory();
+      spy_2.resetHistory();
 
       vent.off('customEvent_2', spy_2);
 
@@ -1491,7 +1491,7 @@ describe('Vent', function() {
 
       vent.off('hasOwnProperty', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('hasOwnProperty', target);
 
@@ -1509,7 +1509,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', target);
 
@@ -1529,7 +1529,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', window);
 
@@ -1550,7 +1550,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', document);
 
@@ -1571,7 +1571,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', document.documentElement);
 
@@ -1592,7 +1592,7 @@ describe('Vent', function() {
 
       vent.off('customEvent', spy);
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', document.body);
 
@@ -1745,13 +1745,13 @@ describe('Vent', function() {
 
       expect(spy.callCount).to.equal(0, 'spy call count after dispatching event on root element');
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', section);
 
       expect(spy.callCount).to.equal(0, 'spy call count after dispatching event on other element');
 
-      spy.reset();
+      spy.resetHistory();
 
       dispatch('customEvent', content);
 
@@ -1881,8 +1881,8 @@ describe('Vent', function() {
 
       vent.off('.ns', '.myClass');
 
-      spy_delegate.reset();
-      spy_root.reset();
+      spy_delegate.resetHistory();
+      spy_root.resetHistory();
 
       dispatch('customEvent', div);
 
@@ -1891,8 +1891,8 @@ describe('Vent', function() {
 
       vent.off('.ns');
 
-      spy_delegate.reset();
-      spy_root.reset();
+      spy_delegate.resetHistory();
+      spy_root.resetHistory();
 
       dispatch('customEvent', div);
 
@@ -1948,9 +1948,9 @@ describe('Vent', function() {
 
       vent.off('.ns');
 
-      spy_first.reset();
-      spy_second.reset();
-      spy_noNS.reset();
+      spy_first.resetHistory();
+      spy_second.resetHistory();
+      spy_noNS.resetHistory();
 
       dispatch('first', target);
       dispatch('second', target);
@@ -1981,10 +1981,10 @@ describe('Vent', function() {
 
       vent.off('.ns1.ns2.ns3');
 
-      spy_ns1.reset();
-      spy_ns2.reset();
-      spy_ns1ns2.reset();
-      spy_ns1ns2ns3.reset();
+      spy_ns1.resetHistory();
+      spy_ns2.resetHistory();
+      spy_ns1ns2.resetHistory();
+      spy_ns1ns2ns3.resetHistory();
 
       dispatch('customEvent', target);
 
@@ -1995,10 +1995,10 @@ describe('Vent', function() {
 
       vent.off('.ns2');
 
-      spy_ns1.reset();
-      spy_ns2.reset();
-      spy_ns1ns2.reset();
-      spy_ns1ns2ns3.reset();
+      spy_ns1.resetHistory();
+      spy_ns2.resetHistory();
+      spy_ns1ns2.resetHistory();
+      spy_ns1ns2ns3.resetHistory();
 
       dispatch('customEvent', target);
 
@@ -2010,10 +2010,10 @@ describe('Vent', function() {
       vent.off('.ns1');
       dispatch('customEvent', target);
 
-      spy_ns1.reset();
-      spy_ns2.reset();
-      spy_ns1ns2.reset();
-      spy_ns1ns2ns3.reset();
+      spy_ns1.resetHistory();
+      spy_ns2.resetHistory();
+      spy_ns1ns2.resetHistory();
+      spy_ns1ns2ns3.resetHistory();
 
       expect(spy_ns1.callCount).to.equal(0, 'spy_ns1 call count after removing .ns1.ns2 and dispatching event');
       expect(spy_ns2.callCount).to.equal(0, 'spy_ns2 count after removing .ns1.ns2 and dispatching event');
