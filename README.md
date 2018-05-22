@@ -1,12 +1,12 @@
 # Vent
 > DOM event delegation that actually works
-<img src="http://i.imgur.com/dtee0iY.png" align="right" alt="Vent logo">
+<img src=".github/vent.png" align="right" alt="Vent logo">
 
 Vent is a well-tested event delegation library that supports real DOM events, capture phase listeners, namespaces, and scoped selectors.
 
 ## What is event delegation?
 
-*Event delegation* is a pattern that takes advantage of [event propagation](https://github.com/lazd/vent#capture-vs-bubbling) to let you easily handle events originating from specific descendant elements. With event delegation and the power of CSS selectors, you can handle events originating from any number of elements or add event listeners before the elements you want to listen to are even added to the DOM.
+*Event delegation* is a pattern that takes advantage of [event propagation](https://github.com/adobe/vent#capture-vs-bubbling) to let you easily handle events originating from specific descendant elements. With event delegation and the power of CSS selectors, you can handle events originating from any number of elements or add event listeners before the elements you want to listen to are even added to the DOM.
 
 Vent implements the event delegation pattern with a simple, powerful, and familiar API.
 
@@ -404,8 +404,8 @@ Vent may work correctly on other browsers that support these technologies.
 
 ## Contributing
 
-Pull requests and issue reports are welcome! Please see the [contribution guidelines](CONTRIBUTING.md) before you get started.
+Pull requests and issue reports are welcome! Please see the [contribution guidelines](.github/CONTRIBUTING.md) before you get started.
 
-## License
+### Licensing
 
-Vent is released under the permissive BSD license.
+This project is licensed under the Apache V2 License. See [LICENSE](LICENSE) for more information.
