@@ -1,4 +1,6 @@
 /tests
 /coverage
+.github
+.jshintrc
 karma.conf.js
 .travis.yml
