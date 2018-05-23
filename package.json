@@ -1,5 +1,5 @@
 {
-  "name": "vent",
+  "name": "@adobe/vent",
   "version": "1.0.0",
   "scripts": {
     "test": "rm -rf coverage/; REPORT_COVERAGE=1 node_modules/karma/bin/karma start --single-run --no-auto-watch",
