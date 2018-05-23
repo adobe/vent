@@ -330,7 +330,7 @@ Assuming the following HTML structure:
 
 An event dispatched from `#node1` will take the following path:
 
-![Event propagation](http://i.imgur.com/Sla5qCg.png)
+![Event propagation](.github/event_propagation.png)
 
 With Vent, listeners can be configured to be called during the *capture* or *bubble phase*.
 
